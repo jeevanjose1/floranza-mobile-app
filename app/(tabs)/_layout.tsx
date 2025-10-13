@@ -1,35 +1,66 @@
-import { Tabs } from 'expo-router';
+import TabButton from '@/components/common/tab-button';
+import useBreakPoints from '@/hooks/useBreajpoints';
+import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
-
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+    const router = useRouter()
+    const { isWidth } = useBreakPoints({breakPoint:375});
+  
+ const handlePressNavigation = () => {
+    router.push('/account')
+  }
 
   return (
+    <SafeAreaView  className='flex-1 bg-white'   edges={['bottom']}>
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
+        animation:'shift'
+      }}
+      
+      tabBar={({ state }) => {
+
+        return (
+          <View
+            className={`h-[80px] flex-row  justify-around ${isWidth ? 'px-2':'px-8'}  items-center`}
+          >
+            
+             <TabButton
+              path={'/(tabs)'}
+              icon={'home'}
+              isActive={state.index === 0}
+              title='Home'
+            />
+
+            <TabButton
+              path={'/(tabs)/wishlist'}
+              isActive={state.index === 1}
+              icon={'heart'}
+              title='Wishlist'
+            />
+
+
+            <TabButton
+              path={'/cart'}
+              icon={'shopping-cart'}
+              title='Cart'
+            />
+            <TabButton
+              onPress={handlePressNavigation}
+              icon={'user'}
+              title='Account'
+            />
+            
+          </View>
+        )
+      }}
+    >
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="wishlist" />
     </Tabs>
+    </SafeAreaView>
   );
 }
