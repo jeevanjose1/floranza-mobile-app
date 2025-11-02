@@ -56,7 +56,7 @@ const QuantitySelector = ({
     return (
         <View>
             {showLabel && (
-                <Text className="font-sam-medium text-base ">
+                <Text className="font-sam-medium text-base  mb-3">
                     Quantity
                 </Text>
             )}

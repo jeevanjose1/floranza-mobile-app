@@ -1,4 +1,3 @@
-import { media } from '@/constants/medias'
 import { useRouter } from 'expo-router'
 import React from 'react'
 import { Image, Text, TouchableOpacity, View } from 'react-native'
@@ -9,7 +8,7 @@ type Props = {
   price?: number
   oldPrice?: number
   discount?: number
-  image?: any
+  image?: string
   onPress?: any
 }
 
@@ -19,7 +18,7 @@ const ProductCard = ({
   price = 899,
   oldPrice = 1099,
   discount = 20,
-  image = media.kurti,
+  image,
   onPress,
 }: Props) => {
 
@@ -33,15 +32,15 @@ const ProductCard = ({
     <TouchableOpacity
       onPress={handlePress}
       activeOpacity={0.9}
-      className="w-full aspect-[4/7] bg-white  overflow-hidden"
+      className="w-full aspect-[4/7] bg-white  rounded-lg overflow-hidden"
     >
       {/* Image Section */}
-      <View className="relative h-[79%]">
-        <Image
-          source={image}
+      <View className="relative h-[79%] ">
+        {image && <Image
+          source={{uri:image as string}}
           className="w-full h-full object-top "
           resizeMode="cover"
-        />
+        />}
 
         {/* Discount Badge */}
         {discount > 0 && (

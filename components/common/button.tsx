@@ -1,12 +1,12 @@
 import React from 'react'
-import { Text, TouchableOpacity, View } from 'react-native'
+import { Text, TouchableOpacity } from 'react-native'
 import { twMerge } from 'tailwind-merge'
 
 type Variant = 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost'
 type Size = 'small' | 'medium' | 'large'
 
 type Props = {
-  children:React.ReactNode
+  children: React.ReactNode
   variant?: Variant
   size?: Size
   onPress?: () => void
@@ -70,12 +70,11 @@ const Button = ({
       onPress={onPress} 
       disabled={disabled}
       activeOpacity={0.7}
+      className={containerClass}
     >
-      <View className={containerClass}>
-        <Text className={textClass}>
-          {children}
-        </Text>
-      </View>
+      <Text className={textClass}>
+        {children}
+      </Text>
     </TouchableOpacity>
   )
 }

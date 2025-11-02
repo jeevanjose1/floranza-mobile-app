@@ -1,6 +1,7 @@
 import Header from '@/components/layout/header'
 import useBreakPoints from '@/hooks/useBreajpoints'
 import { Ionicons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 import React, { useState } from 'react'
 import {
   ScrollView,
@@ -19,6 +20,12 @@ const Account = () => {
     phone: "+91 98765 43210"
   })
 
+  const router = useRouter();
+
+  const handleLogout = () => {
+    router.replace('/login');
+  }
+
   const menuSections = [
     {
       title: "Orders & Shopping",
@@ -32,16 +39,9 @@ const Account = () => {
       items: [
         { icon: "person-outline", label: "Edit Profile", color: "#ED2353" },
         { icon: "location-outline", label: "Saved Addresses", color: "#ED2353" },
-        { icon: "notifications-outline", label: "Notifications", color: "#ED2353" }
       ]
     },
-    {
-      title: "Support",
-      items: [
-        { icon: "help-circle-outline", label: "Help Center", color: "#ED2353" },
-        { icon: "settings-outline", label: "Settings", color: "#ED2353" }
-      ]
-    }
+    
   ]
 
   const getInitials = (name: string) => {
@@ -109,6 +109,7 @@ const Account = () => {
 
           {/* Logout Button */}
           <TouchableOpacity 
+            onPress={handleLogout}
             className="bg-white rounded-md shadow-sm p-4 flex-row items-center justify-center mt-2"
             activeOpacity={0.7}
           >

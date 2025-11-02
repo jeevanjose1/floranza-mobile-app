@@ -14,6 +14,8 @@ export const media = {
     dupattas: require('../assets/images/dupattas.png'),
     home_were: require('../assets/images/homeware.png'),
     bottom: require('../assets/images/bottom.png'),
+    auth_bg: require('../assets/images/auth-bg.jpg'),
+
     wish_list: wishList,
     home: home,
     cart: cart,

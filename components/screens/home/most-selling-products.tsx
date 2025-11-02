@@ -1,72 +1,40 @@
 import Button from "@/components/common/button";
 import ProductCard from "@/components/common/product-card";
-import { media } from "@/constants/medias";
 import useBreakPoints from "@/hooks/useBreajpoints";
+import { calculate_discount, calculate_product_price } from "@/lib/utils";
+import { useGetMostSelleingProducts } from "@/services/queries/home";
 import { FlashList } from "@shopify/flash-list";
 import React from "react";
-import { Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 
 const MostSellingProducts = () => {
   const { isWidth } = useBreakPoints({ breakPoint: 475 });
+  const {
+    data: latest_products,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useGetMostSelleingProducts();
 
-  const products = [
-    {
-      id: "3",
-      name: "Cotton Anarkali Suit Set",
-      category: "Suit",
-      price: 1299,
-      oldPrice: 1699,
-      discount: 23,
-      image: media.dupattas,
-    },
-    {
-      id: "1",
-      name: "Florista Kurti in Fox Georgette - Off-White",
-      category: "Kurti",
-      price: 899,
-      oldPrice: 1099,
-      discount: 20,
-      image: media.kurti,
-    },
-    {
-      id: "2",
-      name: "Elegant Silk Saree with Zari Border",
-      category: "Saree",
-      price: 1499,
-      oldPrice: 1999,
-      discount: 25,
-      image: media.saree,
-    },
-    {
-      id: "6",
-      name: "Casual Cotton Dress - Pink Floral",
-      category: "Dress",
-      price: 799,
-      oldPrice: 999,
-      discount: 20,
-      image: media.saree,
-    },
+  const flat_product = latest_products ? latest_products?.pages?.map((item: any) => item?.data?.list)?.flat() : [];
 
-    {
-      id: "4",
-      name: "Printed Rayon Kurta with Dupatta",
-      category: "Kurta Set",
-      price: 999,
-      oldPrice: 1299,
-      discount: 18,
-      image: media.home_were,
-    },
-    {
-      id: "5",
-      name: "Designer Lehenga Choli with Embroidery",
-      category: "Lehenga",
-      price: 2999,
-      oldPrice: 3999,
-      discount: 25,
-      image: media.pree_book,
-    },
+  const filterd_data =
+    flat_product?.map((item: any) => {
+      return {
+        id: item?.id,
+        title: item?.name,
+        price: calculate_product_price(item),
 
-  ];
+        image: item?.images?.large,
+     
+        slug: item?.slug,
+        is_pre_order: item?.is_pre_order,
+        is_new_product: item?.is_new_product
+      };
+    }) || [];
+
+
+
 
   return (
     <View className="px-4 w-full mb-6">
@@ -78,17 +46,17 @@ const MostSellingProducts = () => {
       </View>
 
       <FlashList
-        data={products}
+        data={filterd_data}
         numColumns={isWidth ? 2 : 3}
-        // estimatedItemSize={250}
+        refreshing={isFetchingNextPage}
         renderItem={({ item }) => (
           <View className="flex-1 p-1">
             <ProductCard
-              name={item.name}
-              category={item.category}
-              price={item.price}
-              oldPrice={item.oldPrice}
-              discount={item.discount}
+              name={item.title}
+              // category={item.category}
+              price={item.price.min  as any}
+              oldPrice={item.price.max !==0 && String(item.price.max) as any}
+              discount={item.price.max ? calculate_discount(item.price.min,item.price.max) as number :0 }
               image={item.image}
             />
           </View>
@@ -98,10 +66,10 @@ const MostSellingProducts = () => {
           paddingBottom: 20,
         }}
       />
-      <View className="items-center">
-        <Button size='small' variant='primary' className='max-w-28' ><Text className=' font-sam-bold'>Show all</Text></Button>
+      {hasNextPage && <View className="items-center">
+        <Button disabled={isFetchingNextPage} onPress={()=>fetchNextPage()} size='small' variant='primary' className='max-w-28' >{isFetchingNextPage ? <ActivityIndicator /> : <Text className=' font-sam-bold'>Show all</Text>}</Button>
 
-      </View>
+      </View>}
 
     </View>
   );

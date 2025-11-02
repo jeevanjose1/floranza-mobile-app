@@ -4,19 +4,20 @@
     "slug": "floranza-mobile-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
+    "icon": "./assets/images/logo-square.png",
     "scheme": "floranzamobileapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jeevanjose1997.floranzamobileapp"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/logo.png",
-        "backgroundImage": "./assets/images/logo.png",
-        "monochromeImage": "./assets/images/logo.png"
+        "foregroundImage": "./assets/images/logo-square.png",
+        "backgroundImage": "./assets/images/logo-square.png",
+        "monochromeImage": "./assets/images/logo-square.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -24,7 +25,7 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/logo.png",
+      "favicon": "./assets/images/logo-square.png",
       "bundler": "metro"
     },
     "plugins": [
@@ -32,7 +33,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/logo.png",
+          "image": "./assets/images/logo-square.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",

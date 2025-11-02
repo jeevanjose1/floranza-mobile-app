@@ -3,7 +3,7 @@ import Header from '@/components/layout/header'
 import ImageSection from '@/components/screens/product-details/image-section'
 import SimilarProducts from '@/components/screens/product-details/similar-products'
 import { Ionicons } from '@expo/vector-icons'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native'
 import RenderHtml from 'react-native-render-html'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -12,6 +12,8 @@ type Props = {}
 
 const ProductDetails = (props: Props) => {
     const { width } = useWindowDimensions()
+    const scrollViewRef = useRef<ScrollView>(null)
+    const accordionRefs = useRef<{ [key: string]: View | null }>({})
     const [selectedSize, setSelectedSize] = useState<string>('M')
     const [quantity, setQuantity] = useState<number>(1)
     const [expandedAccordion, setExpandedAccordion] = useState<string | null>(null)
@@ -23,7 +25,24 @@ const ProductDetails = (props: Props) => {
     }
 
     const toggleAccordion = (section: string) => {
-        setExpandedAccordion(expandedAccordion === section ? null : section)
+        const newExpandedState = expandedAccordion === section ? null : section
+        setExpandedAccordion(newExpandedState)
+
+        // Scroll to the accordion after it expands
+        if (newExpandedState === section) {
+            setTimeout(() => {
+                accordionRefs.current[section]?.measureLayout(
+                    scrollViewRef.current as any,
+                    (x, y) => {
+                        scrollViewRef.current?.scrollTo({
+                            y: y - 20, // Add 20px offset from top
+                            animated: true
+                        })
+                    },
+                    () => {}
+                )
+            }, 100)
+        }
     }
 
     const accordionData = [
@@ -104,7 +123,7 @@ const ProductDetails = (props: Props) => {
         <SafeAreaView className='flex-1 ' edges={['bottom', 'top']}>
             <Header title={false} type='product_details' />
 
-            <ScrollView className='flex-1 '>
+            <ScrollView ref={scrollViewRef} className='flex-1 '>
                   <View className=' bg-white  mb-2'>
                 <ImageSection />
 
@@ -192,7 +211,12 @@ const ProductDetails = (props: Props) => {
                     {/* Accordion Sections */}
                     <View >
                         {accordionData.map((item) => (
-                            <View key={item.id} className='mb-2'>
+                            <View 
+                                key={item.id} 
+                                className='mb-2'
+                                ref={(ref) => accordionRefs.current[item.id] = ref as any}
+                                collapsable={false}
+                            >
                                 <TouchableOpacity
                                     onPress={() => toggleAccordion(item.id)}
                                     className='bg-white rounded-lg p-4 flex-row justify-between items-center border border-gray-200'
