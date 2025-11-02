@@ -82,7 +82,7 @@ const Account = () => {
               <Text className="text-xs font-semibold text-gray-500 uppercase mb-2 px-1 tracking-wider">
                 {section.title}
               </Text>
-              <View className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <View className="bg-white rounded-md shadow-sm overflow-hidden">
                 {section.items.map((item, itemIdx) => (
                   <TouchableOpacity
                     key={itemIdx}
@@ -109,7 +109,7 @@ const Account = () => {
 
           {/* Logout Button */}
           <TouchableOpacity 
-            className="bg-white rounded-2xl shadow-sm p-4 flex-row items-center justify-center mt-2"
+            className="bg-white rounded-md shadow-sm p-4 flex-row items-center justify-center mt-2"
             activeOpacity={0.7}
           >
             <Ionicons name="log-out-outline" size={22} color="#EF4444" />

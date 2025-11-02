@@ -6,7 +6,7 @@ import React from 'react';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 
 type HeaderProps = {
-  type?: 'default' | 'product_list' | 'account' | 'product_details';
+  type?: 'default' | 'product_list' | 'account' | 'product_details'| 'cart';
   title?: string | boolean
   onBackPress?: () => void;
   onCartPress?: () => void;
@@ -57,7 +57,7 @@ const Header = ({
           height: 100,
           zIndex: -1,
         }}
-      />:<View className='absolute w-full h-24 -top-[100%] -z-1 left-0 bg-white'/>}
+      />:<View className='absolute  h-24 -top-[100%] -z-1 right-0 left-0 bg-white'/>}
       
       {/* Left Section */}
       {type === 'default' ? (
@@ -76,7 +76,7 @@ const Header = ({
       )}
 
       {/* Right Section */}
-      <View className="flex-row items-center gap-4">
+      {type !=='cart'&&<View className="flex-row items-center gap-4">
         {showSearchIcon && (
           <TouchableOpacity onPress={handlePressSearch} activeOpacity={0.7}>
             <Ionicons name="search-outline" size={24} />
@@ -85,7 +85,7 @@ const Header = ({
         <TouchableOpacity onPress={handleCartPress} activeOpacity={0.7}>
           <Ionicons name="bag-outline" size={24} />
         </TouchableOpacity>
-      </View>
+      </View>}
     </View>
   );
 };

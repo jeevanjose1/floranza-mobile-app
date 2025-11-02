@@ -46,7 +46,7 @@ export default function RootLayout() {
           />
           <Stack.Screen 
             options={{ 
-              headerShown: true, 
+              headerShown: false, 
               animation: 'slide_from_right',
               title: 'Cart'
             }} 
@@ -68,7 +68,7 @@ export default function RootLayout() {
           />
           <Stack.Screen 
             options={{ 
-              headerShown: true,
+              headerShown: false,
               animation: 'slide_from_right',
               title: 'Search'
             }} 

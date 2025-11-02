@@ -36,7 +36,7 @@ export default function ProductDetailsCarousel() {
  
 
   return (
-    <View className="flex-1 bg-gray-50 mb-2">
+    <View className="flex-1 bg-gray-50 ">
       {/* Carousel Container */}
       <View className="bg-white">
         <Carousel

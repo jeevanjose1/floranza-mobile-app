@@ -56,7 +56,7 @@ const QuantitySelector = ({
     return (
         <View>
             {showLabel && (
-                <Text className="font-sam-medium text-base mb-3">
+                <Text className="font-sam-medium text-base ">
                     Quantity
                 </Text>
             )}
@@ -64,7 +64,7 @@ const QuantitySelector = ({
                 <TouchableOpacity 
                     onPress={handleDecrement}
                     disabled={quantity <= minQuantity}
-                    className={`w-12 h-12 rounded-lg border-2 bg-white items-center justify-center ${
+                    className={`w-12 h-10 rounded-lg border bg-white items-center justify-center ${
                         quantity <= minQuantity ? 'border-gray-200 opacity-50' : 'border-gray-300'
                     }`}
                 >
@@ -81,14 +81,14 @@ const QuantitySelector = ({
                         onChangeText={handleTextChange}
                         keyboardType="numeric"
                         maxLength={2}
-                        className='w-16 h-12 text-center font-sam-bold text-lg py-1 border-2 border-gray-300 rounded-lg bg-white'
+                        className='w-16 h-10 text-center font-sam-bold text-lg py-1 border border-gray-300 rounded-lg bg-white'
                     />
                 </View>
                 
                 <TouchableOpacity 
                     onPress={handleIncrement}
                     disabled={quantity >= maxQuantity}
-                    className={`w-12 h-12 rounded-lg border-2 items-center justify-center ${
+                    className={`w-12 h-10 rounded-lg border items-center justify-center ${
                         quantity >= maxQuantity 
                             ? 'border-gray-200 bg-gray-100 opacity-50' 
                             : 'border-primary bg-primary/5'

@@ -105,14 +105,14 @@ const ProductDetails = (props: Props) => {
             <Header title={false} type='product_details' />
 
             <ScrollView className='flex-1 '>
-                  <View className='p-4 bg-white  mb-2'>
+                  <View className=' bg-white  mb-2'>
                 <ImageSection />
 
                 {/* Product Title & Favorite */}
               
 
 
-                    <View className='flex-row  items-start w-full justify-between mb-1'>
+                    <View className='flex-row px-4  items-start w-full justify-between mb-1'>
                         <Text numberOfLines={2} className='font-sam-bold max-w-[90%] text-lg'>
                             Florista Kurti in Fox Georgette - Off-White
                         </Text>
@@ -122,12 +122,12 @@ const ProductDetails = (props: Props) => {
                     </View>
 
                     {/* Category */}
-                    <Text className="font-sam-regular  text-gray-500 text-[14px] mb-2">
+                    <Text className="font-sam-regular px-4  text-gray-500 text-[14px] mb-2">
                         Kurti
                     </Text>
 
                     {/* Price */}
-                    <View className="flex-row  items-center mb-4">
+                    <View className="flex-row px-4  items-center mb-4">
                         <Text className="font-sam-bold text-primary text-2xl mr-4">
                             ₹800
                         </Text>
@@ -140,7 +140,7 @@ const ProductDetails = (props: Props) => {
                     </View>
 
                     {/* Size Selector */}
-                    <View className=" mb-4">
+                    <View className=" mb-4 px-4 ">
                         <View className='flex-row justify-between items-center mb-3'>
                             <Text className="font-sam-medium text-base">
                                 Select Size
@@ -152,12 +152,12 @@ const ProductDetails = (props: Props) => {
                             </TouchableOpacity>
                         </View>
 
-                        <View className='flex-row flex-wrap gap-2'>
+                        <View className='flex-row  flex-wrap gap-2'>
                             {sizes.map((size) => (
                                 <TouchableOpacity
                                     key={size}
                                     onPress={() => setSelectedSize(size)}
-                                    className={`px-4 py-3 rounded-lg border-2 min-w-min items-center ${selectedSize === size
+                                    className={`px-4 py-2 rounded-lg border min-w-min items-center ${selectedSize === size
                                         ? 'border-primary bg-primary/5'
                                         : 'border-gray-300 bg-white'
                                         }`}
@@ -174,7 +174,7 @@ const ProductDetails = (props: Props) => {
                     </View>
 
                     {/* Quantity Selector */}
-                    <View className="mb-4">
+                    <View className="mb-4 px-4 ">
                         <QuantitySelector
                             quantity={quantity}
                             onQuantityChange={handleQuantityChange}
