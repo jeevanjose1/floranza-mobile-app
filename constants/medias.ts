@@ -7,6 +7,13 @@ import search from '../assets/images/search.svg';
 
 export const media = {
     logo: require('../assets/images/logo.png'),
+    hero: require('../assets/images/hero.jpg'),
+    kurti: require('../assets/images/kurti.png'),
+    saree: require('../assets/images/saree.png'),
+    pree_book: require('../assets/images/prebook.png'),
+    dupattas: require('../assets/images/dupattas.png'),
+    home_were: require('../assets/images/homeware.png'),
+    bottom: require('../assets/images/bottom.png'),
     wish_list: wishList,
     home: home,
     cart: cart,

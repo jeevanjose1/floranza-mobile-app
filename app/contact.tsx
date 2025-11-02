@@ -1,8 +1,8 @@
 import { Text, View } from "react-native"
 
-type Props = {}
 
-export default function Contact({}: Props) {
+
+export default function Contact() {
   return (
     <View>
       <Text>asdasd</Text>

@@ -1,23 +1,42 @@
 import "@/global.css";
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
+import { useFonts } from 'expo-font';
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 
 export default function RootLayout() {
+   const [fontsLoaded] = useFonts({
+    'Dancing-Bold': require('../assets/fonts/DancingScript-Bold.ttf'),
+    'Dancing-Medium': require('../assets/fonts/DancingScript-Medium.ttf'),
+    'Dancing-Regular': require('../assets/fonts/DancingScript-Regular.ttf'),
+    'Dancing-SemiBold': require('../assets/fonts/DancingScript-SemiBold.ttf'),
+    'Sam-Bold': require('../assets/fonts/samsungsharpsans-bold.otf'),
+    'Sam-Medium': require('../assets/fonts/samsungsharpsans-medium.otf'),
+    'Sam': require('../assets/fonts/samsungsharpsans.otf'),
+    
+
+  });
+
+  if(!fontsLoaded){
+    return <Text>loading</Text>
+  }
   return (
     <ThemeProvider value={DefaultTheme}>
-      <View style={{ flex: 1 }}>
+      <View className="flex-1">
       
         
         <Stack
           screenOptions={{
+            
             headerStyle: {
               backgroundColor: 'transparent',
             },
             headerTransparent: true,
+            
            
           }}
+          
         >
           <Stack.Screen 
             options={{ 
@@ -54,6 +73,20 @@ export default function RootLayout() {
               title: 'Search'
             }} 
             name="search" 
+          />
+          <Stack.Screen 
+            options={{ 
+              headerShown: false,
+              animation: 'fade',
+            }} 
+            name="product-list" 
+          />
+           <Stack.Screen 
+            options={{ 
+              headerShown: false,
+              animation: 'fade',
+            }} 
+            name="product-details" 
           />
         </Stack>
         

@@ -1,3 +1,4 @@
+import Header from '@/components/layout/header'
 import useBreakPoints from '@/hooks/useBreajpoints'
 import { Ionicons } from '@expo/vector-icons'
 import React, { useState } from 'react'
@@ -9,9 +10,9 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
-type Props = {}
 
-const Account = (props: Props) => {
+
+const Account = () => {
   const [user] = useState({
     name: "John Doe",
     email: "john.doe@example.com",
@@ -50,6 +51,7 @@ const Account = (props: Props) => {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
+      <Header type='account'/>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View className="px-5 py-8 rounded-b-3xl">
