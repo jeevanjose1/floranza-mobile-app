@@ -1,6 +1,6 @@
 import { fetcher, queryFilter } from "@/lib/utils";
 import { PRODUCT, WISHLIST } from "@/shared/urls/products";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 const useGetProductList = (payload: any) => {
   return useQuery({
@@ -15,6 +15,31 @@ const useGetProductList = (payload: any) => {
       }),
   });
 };
+
+const useGetProductsInfinity = (payload: any) => {
+  return useInfiniteQuery({
+    queryKey: ["PRODUCTS_LIST_INFINITE", payload],
+    queryFn: ({ pageParam = 1 }) =>
+      fetcher({
+        type: "get",
+        url: `${PRODUCT.PRODUCT_LIST}/${payload.slug}${queryFilter({
+          ...payload?.filter,
+          page: pageParam
+        })}`,
+        authenticated: false,
+      }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, allPages) => {
+
+      const has_more = lastPage?.data?.pagination?.next_page_url;
+      if (has_more) {
+        return allPages.length + 1;
+      }
+      return undefined;
+    },
+  });
+};
+
 const useGetProductListSearch = (payload: any) => {
   return useQuery({
     queryKey: ["PRODUCTS_LIST_SEARCH", payload],
@@ -28,19 +53,44 @@ const useGetProductListSearch = (payload: any) => {
       }),
   });
 };
+
+const useGetProductsSearchInfinity = (payload: any) => {
+  return useInfiniteQuery({
+    queryKey: ["PRODUCTS_LIST_SEARCH_INFINITY", payload],
+    queryFn: ({ pageParam = 1 }) =>
+      fetcher({
+        type: "get",
+        url: `${PRODUCT.SEARCH}/${queryFilter(
+          payload?.filter
+        )}`,
+        authenticated: false,
+      }),
+    initialPageParam: 1,
+    enabled:payload.enabled,
+    getNextPageParam: (lastPage, allPages) => {
+
+      const has_more = lastPage?.data?.pagination?.next_page_url;
+      if (has_more) {
+        return allPages.length + 1;
+      }
+      return undefined;
+    },
+  });
+};
+
 const useGetProductDetails = (payload: any) => {
   return useQuery({
-    queryKey: ["PRODUCT_DETAILS",payload],
+    queryKey: ["PRODUCT_DETAILS", payload],
     queryFn: () =>
       fetcher({
         type: "get",
         url: `${PRODUCT.PRODUCT_DETAILS}/${payload}`,
         authenticated: false,
       }),
-       
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    
-    retry: false,
+
+    // staleTime: 1000 * 60 * 5, // 5 minutes
+
+    // retry: false,
   });
 };
 
@@ -93,4 +143,14 @@ const useDeleteWishlist = () => {
     },
   });
 };
-export { useGetProductList, useGetProductDetails, useGetProductListSearch, useGetWishlist, useAddWishlist, useDeleteWishlist, };
+export {
+  useAddWishlist,
+  useDeleteWishlist,
+  useGetProductDetails,
+  useGetProductList,
+  useGetProductListSearch,
+  useGetProductsInfinity,
+  useGetProductsSearchInfinity,
+  useGetWishlist
+};
+

@@ -1,73 +1,130 @@
-import QuantitySelector from "@/components/common/quandity-selector"
 import Header from "@/components/layout/header"
-import { media } from "@/constants/medias"
-import { Ionicons } from "@expo/vector-icons"
-import { useState } from "react"
-import { Image, ScrollView, Text, TouchableOpacity, View } from "react-native"
+import CartItems from "@/components/screens/cart/cart-items"
+import ChangeStateForm from "@/components/screens/cart/change-state"
+import { useAuthenticated } from "@/hooks/useAutheticated"
+import { useViewCart } from "@/services/queries/cart"
+import { indianStates } from "@/shared/others/others"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { useRouter } from "expo-router"
+import React, { useState } from "react"
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
+
+const getInitialState = (cData: string | null | undefined): string => {
+  const DEFAULT_STATE = "KL"
+  if (!cData) return DEFAULT_STATE
+
+  try {
+    const parsedData = JSON.parse(cData as string)
+    return parsedData?.state || DEFAULT_STATE
+  } catch (error) {
+    console.warn("Failed to parse initial state data:", error)
+    return DEFAULT_STATE
+  }
+}
+
+
+type CartItem = any
+
+// --- Main Component ---
+
 export default function Cart() {
-  const [cartItems, setCartItems] = useState([
-      { id: '1', name: 'Florista Kurti in Fox Georgette - Off-White', category: 'Kurti', price: 899, oldPrice: 1099, discount: 20, image: media.kurti },
-      { id: '2', name: 'Elegant Silk Saree with Zari Border', category: 'Saree', price: 1499, oldPrice: 1999, discount: 25, image: media.saree },
-      { id: '3', name: 'Cotton Anarkali Suit Set', category: 'Suit', price: 1299, oldPrice: 1699, discount: 23, image: media.dupattas },
-      { id: '4', name: 'Printed Rayon Kurta with Dupatta', category: 'Kurta Set', price: 999, oldPrice: 1299, discount: 18, image: media.home_were },
-      { id: '5', name: 'Designer Lehenga Choli with Embroidery', category: 'Lehenga', price: 2999, oldPrice: 3999, discount: 25, image: media.pree_book },
-      { id: '6', name: 'Casual Cotton Dress - Pink Floral', category: 'Dress', price: 799, oldPrice: 999, discount: 20, image: media.saree }
-    ])
+  const { cData, gToken } = useAuthenticated()
+  const [state, setState] = useState<string>(() => getInitialState(cData))
+  const [isStateModalVisible, setIsStateModalVisible] = useState(false) // Modal visibility state
+  const token = gToken
+  const router = useRouter()
+  const { data: cart_items, isLoading } = useViewCart({
+    token: token,
+    filter: {
+      state: state, // Pass state directly
+    },
+  })
+
+  // --- Data & State Calculation ---
+  const cart = cart_items?.data
+  const cartItems: CartItem[] = cart?.cart || []
+  const cartIsEmpty = !isLoading && cartItems.length === 0
+
+  // Safer calculations to prevent 'NaN' errors
+  const subtotal = Number(cart?.sub_total || 0)
+  const shipping = Number(cart?.shipping_charge || 0)
+  const total = Number(cart?.total || 0)
+
+  // Helper to get full state name from abbreviation
+  const currentSateLabel =
+    indianStates.find((s) => s.code === state)?.name || state
+
+  // --- Action Handlers ---
 
   
-  const removeItem = (id: string) => {
-    setCartItems(items => items.filter(item => item.id !== id))
+  const handleStateChange = async (newState: string) => {
+    setState(newState)
+    const data = {
+      country: 'IN',
+      state: newState,
+    };
+    try {
+      await AsyncStorage.setItem('floranza-c-data',JSON.stringify(data))
+      
+    } catch (error) {
+      
+    }   
+    
+    setIsStateModalVisible(false) 
   }
-  const [quantity, setQuantity] = useState<number>(1)
-  const handleQuantityChange = (newQuantity: number) => {
-    setQuantity(newQuantity)
-  }
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.price, 0)
-  const shipping = 30
-  const total = subtotal + shipping
 
-  return (
-    <SafeAreaView className='flex-1 ' edges={['top']}>
-      <Header type="cart" title='Cart' />
+  /**
+   * Placeholder for placing the order
+   */
+  const handlePlaceOrder = () => {
+    if (cartIsEmpty || isLoading) return // Prevent action if disabled
+    router.push('/checkout')
+  }
+
+  // --- Render Functions ---
+
+  /**
+   * Renders a loading spinner while the cart is being fetched.
+   */
+  const renderLoading = () => (
+    <View className="flex-1 items-center justify-center bg-gray-50">
+      <ActivityIndicator size="large" />
+      <Text className="mt-4 text-gray-600">Loading Your Cart...</Text>
+    </View>
+  )
+
+
+  const renderEmptyCart = () => (
+    <View className="flex-1 items-center justify-center bg-gray-50 p-8">
+      <Text className="text-2xl font-bold mb-3">Your Cart is Empty </Text>
+      <Text className="text-center text-gray-600">
+        Looks like you haven't added anything yet.
+      </Text>
+      <TouchableOpacity className="mt-6 bg-primary rounded-lg py-3 px-8">
+        <Text className="text-white text-lg font-bold">Start Shopping</Text>
+      </TouchableOpacity>
+    </View>
+  )
+
+ 
+  const renderCartContent = () => (
+    <>
       <ScrollView className="flex-1 bg-gray-50">
         <View className="p-4">
-
           {/* Cart Items */}
           <View className="mb-6">
-            {cartItems.map(item => (
-              <View key={item.id} className="bg-white rounded-md p-4 shadow-sm mb-4">
-                <View className="flex-row">
-                  <Image
-                    source={item.image }
-                    className="w-24 h-24 rounded-md"
-                    resizeMode="cover"
-                  />
-                  <View className="flex-1 ml-4">
-                    <Text className="text-lg font-semibold mb-1">{item.name}</Text>
-                    <Text className="text-gray-600 text-sm mb-2">Size: XL</Text>
-                    <Text className="text-lg font-bold text-primary">₹{item.price.toFixed(2)}</Text>
-                  </View>
-                </View>
-
-                <View className="flex-row justify-between items-center mt-4 pt-4 border-t border-gray-200">
-                  {/* Quantity Selector */}
-                  <QuantitySelector quantity={quantity}
-                    onQuantityChange={handleQuantityChange}
-                    minQuantity={1}
-                    maxQuantity={99}
-                    showLabel={false} />
-
-                  {/* Remove Button */}
-                  <TouchableOpacity
-                    onPress={() => removeItem(item.id)}
-                    className="px-4 py-2  "
-                  >
-                    <Ionicons name="trash" size={24} color={'gray'} />
-                  </TouchableOpacity>
-                </View>
-              </View>
+            {cartItems.map((item: CartItem,index:number) => (
+              <CartItems key={index} item={item} />
             ))}
           </View>
 
@@ -75,43 +132,92 @@ export default function Cart() {
           <View className="bg-white rounded-lg p-6 shadow-sm mb-6">
             <Text className="text-xl font-bold mb-4">Order Summary</Text>
 
+            {/* Price Details */}
             <View className="mb-4">
               <View className="flex-row justify-between mb-3">
                 <Text className="text-gray-600">Subtotal</Text>
                 <Text className="font-semibold">₹{subtotal.toFixed(2)}</Text>
               </View>
-
               <View className="flex-row justify-between mb-3">
                 <Text className="text-gray-600">Shipping</Text>
                 <Text className="font-semibold">₹{shipping.toFixed(2)}</Text>
               </View>
-
               <View className="border-t border-gray-200 pt-3 flex-row justify-between">
                 <Text className="text-lg font-bold">Total</Text>
-                <Text className="text-lg font-bold text-primary">₹{total.toFixed(2)}</Text>
+                <Text className="text-lg font-bold text-primary">
+                  ₹{total.toFixed(2)}
+                </Text>
               </View>
             </View>
 
+            {/* Shipping Details */}
             <View className="border-t border-gray-200 pt-4 mb-4">
               <View className="flex-row justify-between items-start">
                 <View>
                   <Text className="text-gray-600 text-sm mb-1">Ship to</Text>
-                  <Text className="font-semibold">Kerala</Text>
+                  {/* Make state dynamic */}
+                  <Text className="font-semibold">{currentSateLabel}</Text>
                 </View>
-                <TouchableOpacity>
-                  <Text className="underline  text-black/70 font-semibold">Change</Text>
+                <TouchableOpacity onPress={() => setIsStateModalVisible(true)}>
+                  <Text className="underline text-black/70 font-semibold">
+                    Change
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
-
-
           </View>
         </View>
-
       </ScrollView>
-      <View className=" h-24 px-4 pt-4 bg-white"><TouchableOpacity className="bg-primary rounded-lg py-3 items-center">
-        <Text className="text-white text-lg font-bold">Place order</Text>
-      </TouchableOpacity></View>
+
+      {/* Footer/Checkout Button */}
+      <View className="h-24 px-4 pt-4 bg-white border-t border-gray-200">
+        <TouchableOpacity
+          onPress={handlePlaceOrder}
+          disabled={cartIsEmpty || isLoading}
+          className={`rounded-lg py-3 items-center ${
+            cartIsEmpty || isLoading ? "bg-gray-400" : "bg-primary"
+          }`}
+        >
+          <Text className="text-white text-lg font-bold">Place order</Text>
+        </TouchableOpacity>
+      </View>
+    </>
+  )
+
+  // --- Main Return ---
+  return (
+    <SafeAreaView className="flex-1" edges={["top"]}>
+      <Header type="cart" title="Cart" />
+      {isLoading
+        ? renderLoading()
+        : cartIsEmpty
+        ? renderEmptyCart()
+        : renderCartContent()}
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isStateModalVisible}
+        onRequestClose={() => {
+          setIsStateModalVisible(false)
+        }}
+      >
+        <Pressable
+          className="flex-1 justify-center items-center bg-black/50 p-4"
+          onPress={() => setIsStateModalVisible(false)} // Close on overlay press
+        >
+          <Pressable
+            className="bg-white p-6 rounded-lg w-full"
+            onPress={() => {}} // Prevents modal from closing when pressing inside it
+          >
+            <ChangeStateForm
+              currentState={state}
+              onClose={() => setIsStateModalVisible(false)}
+              onSubmit={handleStateChange}
+            />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   )
 }

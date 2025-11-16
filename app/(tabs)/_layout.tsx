@@ -1,4 +1,5 @@
 import TabButton from '@/components/common/tab-button';
+import { useAuthenticated } from '@/hooks/useAutheticated';
 import useBreakPoints from '@/hooks/useBreajpoints';
 import { Tabs, useRouter } from 'expo-router';
 import React from 'react';
@@ -8,9 +9,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function TabLayout() {
   const router = useRouter()
   const { isWidth } = useBreakPoints({ breakPoint: 375 });
-
+  const {isAuthenticated} = useAuthenticated()
   const handlePressNavigation = () => {
-    router.push('/account')
+    if(isAuthenticated)router.push('/account')
+    else router.push('/login')
+    
   }
 
   return (

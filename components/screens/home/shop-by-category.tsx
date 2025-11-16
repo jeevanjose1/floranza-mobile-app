@@ -11,7 +11,7 @@ const CategoryCard = ({ title, image, slug, width }: CardProps) => {
 
     const handlePress = () => {
         router.navigate({
-            pathname: '/product-list',
+            pathname: `/product-list`,
             params: { slug }
         })
     }
@@ -34,11 +34,11 @@ const CategoryCard = ({ title, image, slug, width }: CardProps) => {
                     </LinearGradient>
                 </View>
 
-                <Image
+                {image && <Image
                     source={{ uri: image }}
                     className="w-full absolute top-0 left-0 h-full rounded-lg"
                     resizeMode="cover"
-                />
+                />}
                 <View className='flex items-center relative z-10 justify-end px-4 py-2 h-full'>
                     <Text className='font-bold text-white text-lg text-center font-sam-bold'>{title}</Text>
                 </View>

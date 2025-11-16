@@ -1,5 +1,6 @@
 import Button from '@/components/common/button';
 import { media } from '@/constants/medias';
+import { useSignup } from '@/services/queries/auth';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -17,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import * as Yup from 'yup';
 
 // Validation schema
@@ -44,20 +46,34 @@ const registerSchema = Yup.object().shape({
 export default function Register() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const { mutateAsync: signup, isPending } = useSignup()
 
   const handleRegister = async (values: {
     username: string;
     email: string;
     password: string;
   }) => {
-    try {
-      // TODO: Implement registration logic
-      console.log('Register:', values);
-      // After successful registration, navigate to home or login
-      // router.replace('/(tabs)');
-    } catch (error) {
-      console.error('Registration error:', error);
+
+    const data = {
+      username:values.username,
+      email:values.email,
+      password:values.password
     }
+    signup(data, {
+      onSuccess: (response) => {
+        Toast.show({
+          type:'success',
+          text1:'User registration successfull please login'
+        })
+        router.push('/login')
+      },
+      onError: (error: any) => {
+        Toast.show({
+          type:'error',
+          text1:error.data?.message||'User registration successfull please login'
+        })
+      }
+    })
   };
 
   const handleLogin = () => {
@@ -86,26 +102,26 @@ export default function Register() {
               keyboardShouldPersistTaps="handled"
             >
               <View className="flex-1 justify-center px-6 py-8">
-                
+
 
                 {/* Registration Form Card */}
                 <View className="bg-white/95 backdrop-blur-lg rounded-2xl p-6 shadow-2xl">
-                {/* Logo Section */}
-                <View className="items-center mb-8">
-                <View className="bg-white rounded-full p-4 mb-4">
-                    <Image
-                      source={media.logo}
-                      className="w-36 h-36"
-                      resizeMode="contain"
-                    />
+                  {/* Logo Section */}
+                  <View className="items-center mb-8">
+                    <View className="bg-white rounded-full p-4 mb-4">
+                      <Image
+                        source={media.logo}
+                        className="w-36 h-36"
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <Text className="font-sam-bold text-2xl mb-2">
+                      Create Account
+                    </Text>
+                    <Text className="font-sam-regular  text-base">
+                      Sign up to get started
+                    </Text>
                   </View>
-                  <Text className="font-sam-bold text-2xl mb-2">
-                    Create Account
-                  </Text>
-                  <Text className="font-sam-regular  text-base">
-                    Sign up to get started
-                  </Text>
-                </View>
                   <Formik
                     initialValues={{ username: '', email: '', password: '' }}
                     validationSchema={registerSchema}
@@ -127,11 +143,10 @@ export default function Register() {
                             Username
                           </Text>
                           <View
-                            className={`flex-row items-center border rounded-xl px-4 py-1 bg-white ${
-                              errors.username && touched.username
+                            className={`flex-row items-center border rounded-xl px-4 py-1 bg-white ${errors.username && touched.username
                                 ? 'border-red-500'
                                 : 'border-gray-200'
-                            }`}
+                              }`}
                           >
                             <Ionicons
                               name="person-outline"
@@ -161,11 +176,10 @@ export default function Register() {
                             Email
                           </Text>
                           <View
-                            className={`flex-row items-center border rounded-xl px-4 py-1 bg-white ${
-                              errors.email && touched.email
+                            className={`flex-row items-center border rounded-xl px-4 py-1 bg-white ${errors.email && touched.email
                                 ? 'border-red-500'
                                 : 'border-gray-200'
-                            }`}
+                              }`}
                           >
                             <Ionicons
                               name="mail-outline"
@@ -196,11 +210,10 @@ export default function Register() {
                             Password
                           </Text>
                           <View
-                            className={`flex-row items-center border rounded-xl px-4 py-1 bg-white ${
-                              errors.password && touched.password
+                            className={`flex-row items-center border rounded-xl px-4 py-1 bg-white ${errors.password && touched.password
                                 ? 'border-red-500'
                                 : 'border-gray-200'
-                            }`}
+                              }`}
                           >
                             <Ionicons
                               name="lock-closed-outline"
@@ -239,11 +252,11 @@ export default function Register() {
                           variant="primary"
                           size="large"
                           onPress={handleSubmit}
-                          disabled={isSubmitting}
+                          disabled={isPending}
                           className="w-full mb-4"
                         >
                           <Text className="font-sam-bold text-white text-base">
-                            {isSubmitting ? 'Creating Account...' : 'Sign Up'}
+                            {isPending ? 'Creating Account...' : 'Sign Up'}
                           </Text>
                         </Button>
                       </View>

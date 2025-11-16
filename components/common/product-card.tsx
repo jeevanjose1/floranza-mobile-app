@@ -10,6 +10,7 @@ type Props = {
   discount?: number
   image?: string
   onPress?: any
+  slug?: string
 }
 
 const ProductCard = ({
@@ -20,14 +21,18 @@ const ProductCard = ({
   discount = 20,
   image,
   onPress,
+  slug
 }: Props) => {
-
   const router = useRouter()
-  const handlePress = ()=>{
-    router.push('/product-details')
+  const handlePress = () => {
+    router.push({
+      pathname: '/product-details',
+      params: { slug }
+    }
+    )
     onPress
   }
-  
+
   return (
     <TouchableOpacity
       onPress={handlePress}
@@ -36,10 +41,11 @@ const ProductCard = ({
     >
       {/* Image Section */}
       <View className="relative h-[79%] ">
-        {image && <Image
-          source={{uri:image as string}}
+        {<Image
+          source={{ uri: image as string }}
           className="w-full h-full object-top "
           resizeMode="cover"
+
         />}
 
         {/* Discount Badge */}

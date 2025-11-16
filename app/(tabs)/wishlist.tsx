@@ -67,7 +67,6 @@ export default function Wishlist() {
     setRefreshing(true);
     // Simulate API call
     setTimeout(() => {
-      console.log('Reloading wishlist...');
       setRefreshing(false);
     }, 1500);
   }, []);

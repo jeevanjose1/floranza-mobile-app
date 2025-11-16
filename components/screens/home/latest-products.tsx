@@ -57,6 +57,7 @@ const LatestProducts = () => {
               oldPrice={item.price.max !==0 && String(item.price.max) as any}
               discount={item.price.max ? calculate_discount(item.price.min,item.price.max) as number :0 }
               image={item.image}
+              slug={item.slug}
             />
           </View>
         )}

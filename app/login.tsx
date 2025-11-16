@@ -1,6 +1,9 @@
 import Button from '@/components/common/button';
 import { media } from '@/constants/medias';
+import { useAuthenticated } from '@/hooks/useAutheticated';
+import { useSigin } from '@/services/queries/auth';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Formik } from 'formik';
@@ -17,6 +20,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
 import * as Yup from 'yup';
 
 // Validation schema
@@ -31,20 +35,51 @@ const loginSchema = Yup.object().shape({
 
 export default function Login() {
   const router = useRouter();
+  const { gToken } = useAuthenticated()
   const [showPassword, setShowPassword] = useState(false);
+  const { mutateAsync: signin, isPending } = useSigin()
 
   const handleLogin = async (values: {
     usernameOrEmail: string;
     password: string;
   }) => {
-    try {
-      // TODO: Implement login logic
-      console.log('Login:', values);
-      // After successful login, navigate to home
-      // router.replace('/(tabs)');
-    } catch (error) {
-      console.error('Login error:', error);
+    const form_data = new FormData()
+    form_data.append('email', values.usernameOrEmail)
+    form_data.append('password', values.password)
+    form_data.append('guest_token', gToken as string)
+
+    const data = {
+      email:values.usernameOrEmail,
+      password:values.password,
+      guest_token:gToken
     }
+
+    signin(data, {
+      onSuccess: async (response) => {
+
+        if (response.data?.auth) {
+          try {
+            Toast.show({
+              type: 'success',
+              text1: 'Login successfull'
+            })
+            await AsyncStorage.setItem('floranza-t-value', response?.data?.auth?.token)
+            router.replace('/')
+          } catch (error) {
+            console.log('error')
+          }
+
+
+        }
+      },
+      onError: (error: any) => {
+        console.log(error)
+        Toast.show({
+          type: 'error',
+          text1: error.data?.message || 'Something went wrong'
+        })
+      }
+    })
   };
 
   const handleSignUp = () => {
@@ -74,25 +109,25 @@ export default function Login() {
             >
               <View className="flex-1 justify-center px-4 py-8">
                 {/* Logo Section */}
-                
+
 
                 {/* Login Form Card */}
                 <View className="bg-white/95  rounded-xl p-6 shadow-2xl">
-                <View className="items-center mb-8">
-                  <View className="bg-white rounded-full p-4 mb-4">
-                    <Image
-                      source={media.logo}
-                      className="w-36 h-36"
-                      resizeMode="contain"
-                    />
+                  <View className="items-center mb-8">
+                    <View className="bg-white rounded-full p-4 mb-4">
+                      <Image
+                        source={media.logo}
+                        className="w-36 h-36"
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <Text className="font-sam-bold text-2xl mb-2">
+                      Welcome Back
+                    </Text>
+                    <Text className="font-sam-regular  text-base">
+                      Sign in to continue
+                    </Text>
                   </View>
-                  <Text className="font-sam-bold text-2xl mb-2">
-                    Welcome Back
-                  </Text>
-                  <Text className="font-sam-regular  text-base">
-                    Sign in to continue
-                  </Text>
-                </View>
                   <Formik
                     initialValues={{ usernameOrEmail: '', password: '' }}
                     validationSchema={loginSchema}
@@ -114,11 +149,10 @@ export default function Login() {
                             Username or Email
                           </Text>
                           <View
-                            className={`flex-row items-center border rounded-xl px-4 py-1 bg-white ${
-                              errors.usernameOrEmail && touched.usernameOrEmail
-                                ? 'border-red-500'
-                                : 'border-gray-200'
-                            }`}
+                            className={`flex-row items-center border rounded-xl px-4 py-1 bg-white ${errors.usernameOrEmail && touched.usernameOrEmail
+                              ? 'border-red-500'
+                              : 'border-gray-200'
+                              }`}
                           >
                             <Ionicons
                               name="person-outline"
@@ -149,11 +183,10 @@ export default function Login() {
                             Password
                           </Text>
                           <View
-                            className={`flex-row items-center border rounded-xl px-4 py-1 bg-white ${
-                              errors.password && touched.password
-                                ? 'border-red-500'
-                                : 'border-gray-200'
-                            }`}
+                            className={`flex-row items-center border rounded-xl px-4 py-1 bg-white ${errors.password && touched.password
+                              ? 'border-red-500'
+                              : 'border-gray-200'
+                              }`}
                           >
                             <Ionicons
                               name="lock-closed-outline"
@@ -199,11 +232,11 @@ export default function Login() {
                           variant="primary"
                           size="large"
                           onPress={handleSubmit}
-                          disabled={isSubmitting}
+                          disabled={isPending}
                           className="w-full mb-4"
                         >
                           <Text className="font-sam-bold text-white text-base">
-                            {isSubmitting ? 'Signing In...' : 'Sign In'}
+                            {isPending ? 'Signing In...' : 'Sign In'}
                           </Text>
                         </Button>
                       </View>

@@ -1,31 +1,26 @@
-import { media } from "@/constants/medias";
 import useBreakPoints from "@/hooks/useBreajpoints";
 import * as React from "react";
 import { Dimensions, Image, TouchableOpacity, View } from "react-native";
 import { useSharedValue } from "react-native-reanimated";
 import Carousel from "react-native-reanimated-carousel";
 
+type imageProp = {
+  data:any[]
+}
 const { width: screenWidth } = Dimensions.get("window");
 
-const products = [
-    { id: '1',  image: media.kurti },
-    { id: '2', image: media.saree },
-    { id: '3', image: media.dupattas },
-    { id: '4', image: media.home_were },
-    { id: '5', image: media.pree_book },
-    { id: '6', image: media.saree }
-  ]
 
-export default function ProductDetailsCarousel() {
+export default function ProductDetailsCarousel({data}:imageProp) {
   const scrollOffsetValue = useSharedValue<number>(0);
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const { isWidth } = useBreakPoints({ breakPoint: 475 })
+  const imageData = data?.map((item,i)=>({ id:`${i}`, image:item.large})) || []
  const coursolHeight = isWidth ? 600 : 900
-   const renderItem = ({ item }: { item: typeof products[0] }) => {
+   const renderItem = ({ item }: { item: typeof imageData[0] }) => {
     return (
       <View className="flex-1 bg-slate-50 items-center justify-center ">
         <Image
-          source={item.image}
+          source={{uri:item.image}}
           style={{ width: screenWidth, height: coursolHeight }}
           resizeMode="cover"
         />
@@ -44,7 +39,7 @@ export default function ProductDetailsCarousel() {
           width={screenWidth}
           height={coursolHeight}
           autoPlay={false}
-          data={products}
+          data={imageData}
           defaultScrollOffsetValue={scrollOffsetValue}
           scrollAnimationDuration={200}
           onSnapToItem={(index) => setCurrentIndex(index)}
@@ -52,7 +47,7 @@ export default function ProductDetailsCarousel() {
         />
 
         <View className="flex-row justify-center items-center gap-3 py-6 bg-white">
-          {products.map((_, index) => (
+          {imageData.map((_, index) => (
             <TouchableOpacity
               key={index}
               onPress={() => {

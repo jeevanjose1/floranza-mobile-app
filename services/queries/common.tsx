@@ -19,7 +19,7 @@ const useGetCountry = () => {
   return useQuery({
     queryKey: ["COUNTRY"],
     queryFn: () => axios.get(COMMON.COUNTRY)
-      
+
   });
 };
 const useGetAttributes = () => {
@@ -80,23 +80,63 @@ const useGetCatogeries = () => {
 const useTrackOrder = () => {
 
   return useMutation({
-    mutationFn: (data:string) =>
+    mutationFn: (data: string) =>
       fetcher({
         type: "get",
         url: `${COMMON.TRACK}/${data}`,
         authenticated: false,
       }),
     onSuccess: (data) => {
-     return data
+      return data
     },
-    onError:(error)=>error
+    onError: (error) => error
+  });
+};
+
+const useFilterCatogery = () => {
+  return useQuery({
+    queryKey: ["FILTER_CATOGERY"],
+    queryFn: () =>
+      fetcher({
+        type: "get",
+        url: FILTER.CATOGERIES,
+        authenticated: false,
+      }),
+  });
+};
+
+const useFilterMaterial = () => {
+  return useQuery({
+    queryKey: ["FILTER_MATERIAL"],
+    queryFn: () =>
+      fetcher({
+        type: "get",
+        url: FILTER.MATERIALS,
+        authenticated: false,
+      }),
+  });
+};
+
+const useFilterAttributes = () => {
+  return useQuery({
+    queryKey: ["FILTER_Attributes"],
+    queryFn: () =>
+      fetcher({
+        type: "get",
+        url: FILTER.ATTRIBUTES,
+        authenticated: false,
+      }),
   });
 };
 export {
-  useGetNavigation,
+  useFilterAttributes,
+  useFilterCatogery,
+  useFilterMaterial,
   useGetAttributes,
-  useGetMaterials,
   useGetCatogeries,
-  useTrackOrder,
-  useGetCountry
+  useGetCountry,
+  useGetMaterials,
+  useGetNavigation,
+  useTrackOrder
 };
+

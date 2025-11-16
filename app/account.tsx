@@ -1,8 +1,12 @@
 import Header from '@/components/layout/header'
+import { useAuthenticated } from '@/hooks/useAutheticated'
 import useBreakPoints from '@/hooks/useBreajpoints'
+import { useAccountDetails } from '@/services/queries/account'
+import { useLogout } from '@/services/queries/auth'
 import { Ionicons } from '@expo/vector-icons'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useRouter } from 'expo-router'
-import React, { useState } from 'react'
+import React from 'react'
 import {
   ScrollView,
   Text,
@@ -14,17 +18,25 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 
 
 const Account = () => {
-  const [user] = useState({
-    name: "John Doe",
-    email: "john.doe@example.com",
-    phone: "+91 98765 43210"
-  })
+  const {isAuthenticated} = useAuthenticated()
+
+  const { mutateAsync: logout } = useLogout()
+      const { data: user_data } = useAccountDetails(isAuthenticated)
+  const handleLogout = () => {
+    logout().then( async() => {
+      try {
+        await AsyncStorage.multiRemove(['floranza-t-value'])
+        router.replace('/login');
+      } catch (error) {
+        
+      }
+    })
+  }
+ 
 
   const router = useRouter();
 
-  const handleLogout = () => {
-    router.replace('/login');
-  }
+
 
   const menuSections = [
     {
@@ -41,36 +53,34 @@ const Account = () => {
         { icon: "location-outline", label: "Saved Addresses", color: "#ED2353" },
       ]
     },
-    
+
   ]
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('')
+    return name?.split(' ')?.map(n => n[0])?.join('')
   }
-  const { isWidth } = useBreakPoints({breakPoint:375});
+  const { isWidth } = useBreakPoints({ breakPoint: 375 });
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      <Header type='account'/>
+      <Header type='account' />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View className="px-5 py-8 rounded-b-3xl">
           <View className="flex-col justify-center items-center">
             <View className="w-16 h-16 bg-black/10 rounded-full items-center justify-center">
               <Text className={` ${isWidth ? 'text-lg' : 'text-2xl'} font-bold text-black`}>
-                {getInitials(user.name)}
+                {getInitials(user_data?.data?.username)}
               </Text>
             </View>
             <View className=" items-center">
-              <Text className={ `${isWidth ? 'text-base' : 'text-xl'} font-bold text-black mb-1`}>
-                {user.name}
+              <Text className={`${isWidth ? 'text-base' : 'text-xl'} font-bold text-black mb-1`}>
+                {user_data?.data?.username}
               </Text>
               <Text className=" text-black">
-                {user.email}
+               {user_data?.data?.email}
               </Text>
-              <Text className=" text-black">
-                {user.phone}
-              </Text>
+              
             </View>
           </View>
         </View>
@@ -86,9 +96,8 @@ const Account = () => {
                 {section.items.map((item, itemIdx) => (
                   <TouchableOpacity
                     key={itemIdx}
-                    className={`flex-row items-center justify-between p-4 ${
-                      itemIdx !== section.items.length - 1 ? 'border-b border-gray-100' : ''
-                    }`}
+                    className={`flex-row items-center justify-between p-4 ${itemIdx !== section.items.length - 1 ? 'border-b border-gray-100' : ''
+                      }`}
                     activeOpacity={0.7}
                   >
                     <View className="flex-row items-center">
@@ -98,7 +107,7 @@ const Account = () => {
                       </Text>
                     </View>
                     <View className="flex-row items-center">
-                      
+
                       <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
                     </View>
                   </TouchableOpacity>
@@ -108,7 +117,7 @@ const Account = () => {
           ))}
 
           {/* Logout Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={handleLogout}
             className="bg-white rounded-md shadow-sm p-4 flex-row items-center justify-center mt-2"
             activeOpacity={0.7}

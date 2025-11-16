@@ -77,7 +77,7 @@ const QuantitySelector = ({
                 
                 <View className='mx-4'>
                     <TextInput
-                        value={quantity.toString()}
+                        value={quantity?.toString()}
                         onChangeText={handleTextChange}
                         keyboardType="numeric"
                         maxLength={2}

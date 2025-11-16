@@ -38,7 +38,7 @@ export const fetcher = async ({
   cacheTime = 0,
 }: FetcherType) => {
   const key = cacheKey ?? `${type}:${url}:${JSON.stringify(data)}`;
-
+  
   // Check for cached data
   if (type === "get" && cacheTime > 0) {
     const cached = cache.get(key);
@@ -57,10 +57,10 @@ export const fetcher = async ({
       headers,
       onUploadProgress,
     };
-
     const response = authenticated
       ? await instance(config as any)
       : await axios(config as any);
+
     // Cache result if applicable
     if (type === "get" && cacheTime > 0) {
       cache.set(key, response.data);

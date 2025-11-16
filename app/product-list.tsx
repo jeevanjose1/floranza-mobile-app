@@ -4,13 +4,14 @@ import Header from '@/components/layout/header'
 import Categories from '@/components/screens/product-list/categories'
 import { Filter, FilterOptions } from '@/components/screens/product-list/filter'
 import { Sort } from '@/components/screens/product-list/sort'
-import { media } from '@/constants/medias'
 import useBreakPoints from '@/hooks/useBreajpoints'
+import { calculate_discount, calculate_product_price } from '@/lib/utils'
+import { useGetProductsInfinity } from '@/services/queries/product'
 import { Ionicons } from '@expo/vector-icons'
-import AntDesign from '@expo/vector-icons/AntDesign'
 import { FlashList } from '@shopify/flash-list'
+import { useLocalSearchParams } from 'expo-router'
 import React, { useCallback, useState } from 'react'
-import { Dimensions, RefreshControl, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Dimensions, RefreshControl, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 type SortOption = 'trending' | 'recommended' | 'newly_launched' | 'price_low' | 'price_high'
@@ -19,41 +20,54 @@ const ProductList = () => {
   const [sortOpen, setSortOpen] = useState(false)
   const [filterOpen, setFilterOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const { slug } = useLocalSearchParams()
+  
 
   const { isWidth } = useBreakPoints({ breakPoint: 475 })
   const [selectedSort, setSelectedSort] = useState<SortOption>('trending')
   const [selectedFilters, setSelectedFilters] = useState<FilterOptions>({
     sizes: [],
     materials: [],
-    categories: [],
     priceRanges: []
   })
+  
+  const {
+    data: product,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+    isRefetching
+  } = useGetProductsInfinity({ slug,filter: {
+      material: selectedFilters?.materials[0],
+      size: selectedFilters?.sizes[0],
+      min_price: selectedFilters.priceRanges?.[0]?.split('-')[0],
+      max_price: selectedFilters.priceRanges?.[0]?.split('-')[1],
+    }, })
 
-  const handleOpenSort = () => setSortOpen(true)
+  const catogery = product?.pages?.[0]?.data?.category || {}
+  const flat_product = product ? product?.pages?.map((item: any) => item?.data?.products)?.flat() : []
+
+  const filterd_data =
+    flat_product?.map((item: any) => {
+      return {
+        id: item?.id,
+        title: item?.name,
+        price: calculate_product_price(item),
+        image: item?.images?.large,
+        slug: item?.slug,
+        is_pre_order: item?.is_pre_order,
+        is_new_product: item?.is_new_product
+      }
+    }) || []
+
   const handleCloseSort = () => setSortOpen(false)
   const handleOpenFilter = () => setFilterOpen(true)
   const handleCloseFilter = () => setFilterOpen(false)
 
-  const handleFilterToggle = (category: keyof FilterOptions, value: string) => {
-    setSelectedFilters(prev => ({
-      ...prev,
-      [category]: prev[category].includes(value)
-        ? prev[category].filter(item => item !== value)
-        : [...prev[category], value]
-    }))
-  }
-
-  const handleClearFilters = () => {
-    setSelectedFilters({
-      sizes: [],
-      materials: [],
-      categories: [],
-      priceRanges: []
-    })
-  }
+  
 
   const handleApplyFilters = () => {
-    console.log('Applied filters:', selectedFilters)
     handleCloseFilter()
   }
 
@@ -64,50 +78,52 @@ const ProductList = () => {
   const { height: SCREEN_HEIGHT } = Dimensions.get('window')
   const numColumns = isWidth ? 2 : 3
 
-  const products = [
-    { id: '1', name: 'Florista Kurti in Fox Georgette - Off-White', category: 'Kurti', price: 899, oldPrice: 1099, discount: 20, image: media.kurti },
-    { id: '2', name: 'Elegant Silk Saree with Zari Border', category: 'Saree', price: 1499, oldPrice: 1999, discount: 25, image: media.saree },
-    { id: '3', name: 'Cotton Anarkali Suit Set', category: 'Suit', price: 1299, oldPrice: 1699, discount: 23, image: media.dupattas },
-    { id: '4', name: 'Printed Rayon Kurta with Dupatta', category: 'Kurta Set', price: 999, oldPrice: 1299, discount: 18, image: media.home_were },
-    { id: '5', name: 'Designer Lehenga Choli with Embroidery', category: 'Lehenga', price: 2999, oldPrice: 3999, discount: 25, image: media.pree_book },
-    { id: '6', name: 'Casual Cotton Dress - Pink Floral', category: 'Dress', price: 799, oldPrice: 999, discount: 20, image: media.saree }
-  ]
-
-  // 🔄 Pull-to-refresh handler
-  const onRefresh = useCallback(() => {
+  const onRefresh = async () => {
     setRefreshing(true)
-    // Simulate API call
-    setTimeout(() => {
-      console.log('Reloading products...')
-      setRefreshing(false)
-    }, 1500)
-  }, [])
+    await refetch()
+    setRefreshing(false)
+  }
+
+  const loadMore = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage()
+    }
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+
+  const renderFooter = () => {
+    if (!isFetchingNextPage) return null
+    return (
+      <View className='py-4 items-center'>
+        <ActivityIndicator size='large' color='#ED2353' />
+      </View>
+    )
+  }
 
   return (
     <SafeAreaView className='flex-1 bg-gray-50' edges={['top']}>
-      <Header type='product_list' />
+      <Header type='product_list' title={catogery?.name} />
       <Categories />
 
       <FlashList
-        data={products}
+        data={filterd_data}
         numColumns={numColumns}
         key={numColumns}
         className='px-4 mt-2'
         renderItem={({ item }) => (
           <View className='flex-1 p-1'>
             <ProductCard
-              name={item.name}
-              category={item.category}
-              price={item.price}
-              oldPrice={item.oldPrice}
-              discount={item.discount}
+              name={item?.title}
+              price={item.price?.min as any}
+              oldPrice={item.price?.max !== 0 && String(item.price?.max) as any}
+              discount={item.price?.max ? calculate_discount(item?.price?.min, item?.price?.max) as number : 0}
               image={item.image}
+              slug={item.slug}
             />
           </View>
         )}
         refreshControl={
           <RefreshControl
-            refreshing={refreshing}
+            refreshing={refreshing || isRefetching}
             onRefresh={onRefresh}
             colors={['#ED2353']}
             tintColor='#ED2353'
@@ -115,10 +131,13 @@ const ProductList = () => {
             titleColor='#ED2353'
           />
         }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={renderFooter}
       />
 
       <View className='w-full flex-row justify-between bg-white h-20 px-4 py-3'>
-        <View className='flex-1 flex-row justify-center'>
+        {/* <View className='flex-1 flex-row justify-center'>
           <TouchableOpacity onPress={handleOpenSort}>
             <View className='gap-2 items-center flex-row'>
               <AntDesign name='sort-ascending' size={20} color='black' />
@@ -127,7 +146,7 @@ const ProductList = () => {
           </TouchableOpacity>
         </View>
 
-        <View className='w-[.5px] h-8 bg-black/10' />
+        <View className='w-[.5px] h-8 bg-black/10' /> */}
 
         <View className='flex-1 flex-row justify-center'>
           <TouchableOpacity onPress={handleOpenFilter}>
@@ -147,8 +166,7 @@ const ProductList = () => {
         <Filter
           onClose={handleCloseFilter}
           selectedFilters={selectedFilters}
-          onFilterToggle={handleFilterToggle}
-          onClearFilters={handleClearFilters}
+          setSelectedFilters={setSelectedFilters}
           onApplyFilters={handleApplyFilters}
         />
       </Drawer>
