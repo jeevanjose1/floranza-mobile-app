@@ -26,7 +26,7 @@ const LatestProducts = () => {
         price: calculate_product_price(item),
 
         image: item?.images?.large,
-     
+
         slug: item?.slug,
         is_pre_order: item?.is_pre_order,
         is_new_product: item?.is_new_product
@@ -34,7 +34,7 @@ const LatestProducts = () => {
     }) || [];
 
 
-    
+
   return (
     <View className="px-4 w-full mb-8">
       <View className="items-center mb-4">
@@ -53,9 +53,9 @@ const LatestProducts = () => {
             <ProductCard
               name={item.title}
               // category={item.category}
-              price={item.price.min  as any}
-              oldPrice={item.price.max !==0 && String(item.price.max) as any}
-              discount={item.price.max ? calculate_discount(item.price.min,item.price.max) as number :0 }
+              price={item.price.min as any}
+              oldPrice={item.price.max !== 0 && String(item.price.max) as any}
+              discount={item.price.max ? calculate_discount(item.price.min, item.price.max) as number : 0}
               image={item.image}
               slug={item.slug}
             />
@@ -67,7 +67,7 @@ const LatestProducts = () => {
         }}
       />
       {hasNextPage && <View className="items-center">
-        <Button disabled={isFetchingNextPage} onPress={()=>fetchNextPage()} size='small' variant='primary' className='max-w-28' >{isFetchingNextPage ? <ActivityIndicator /> : <Text className=' font-sam-bold'>Show all</Text>}</Button>
+        <Button disabled={isFetchingNextPage} onPress={() => fetchNextPage()} size='small' variant='primary' className='max-w-28' >{isFetchingNextPage ? <ActivityIndicator /> : <Text className=' font-sam-bold'>Show more</Text>}</Button>
 
       </View>}
 

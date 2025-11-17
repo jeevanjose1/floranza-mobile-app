@@ -8,7 +8,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Formik } from "formik";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -16,7 +15,7 @@ import {
     TextInput,
     TextInputProps,
     TouchableOpacity,
-    View,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -214,60 +213,60 @@ export default function AddAddressForm() {
 
 
     const saveAddress = async (values: any) => {
-
         if (isAuthenticated) {
-            const form_data = new FormData();
-            form_data.append("fname", values.fullName);
-            form_data.append("country", values.country);
-            form_data.append("address_1", values.streetAddress);
-            form_data.append("address_2", values.addressLine2 as string);
-            form_data.append("postcode", values.postcode);
-            form_data.append("phone", values.phone);
-            form_data.append("state", values.state);
-            form_data.append("city", values.city);
-            form_data.append("email", values.email);
+            const addressData = {
+                fname: values.fullName,
+                country: values.country,
+                address_1: values.streetAddress,
+                address_2: values.addressLine2 as string,
+                postcode: values.postcode,
+                phone: values.phone,
+                state: values.state,
+                city: values.city,
+                email: values.email,
+            };
 
-            add(form_data, {
+            add(addressData, {
                 onSuccess: () => {
+                    Toast.show({
+                        type: 'success',
+                        text1: 'Address saved'
+                    });
+                    router.back();
 
                 },
                 onError: (error: any) => {
+                    Toast.show({
+                        type: 'error',
+                        text1: error?.data?.message
+                    });
                 },
             });
         } else {
             try {
                 setIsSaving(true);
 
-                // Save the address data to AsyncStorage
-                const haveAddress = await AsyncStorage.getItem(STORAGE_KEY)
+                const haveAddress = await AsyncStorage.getItem(STORAGE_KEY);
                 if (haveAddress) {
-                    await AsyncStorage.removeItem(STORAGE_KEY)
-                    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(values));
-
+                    await AsyncStorage.removeItem(STORAGE_KEY);
                 }
-                router.back()
+                await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(values));
+
+                router.back();
                 Toast.show({
                     type: 'success',
                     text1: 'Address added'
-                })
-
-
+                });
 
             } catch (error) {
-                console.error("Error saving address:", error);
-                Alert.alert(
-                    "Error",
-                    "Failed to save address. Please try again.",
-                    [{ text: "OK" }]
-                );
+                Toast.show({
+                    type: 'error',
+                    text1: 'Failed to save address. Please try again.'
+                });
             } finally {
                 setIsSaving(false);
             }
         }
-
-
-
-
     };
 
     return (
@@ -302,6 +301,7 @@ export default function AddAddressForm() {
                 }) => (
                     <View className="flex-1">
 
+
                         <KeyboardAvoidingView
                             behavior={Platform.OS === "ios" ? "padding" : 'padding'}
                             className="flex-1"
@@ -311,7 +311,7 @@ export default function AddAddressForm() {
                                 showsVerticalScrollIndicator={false}
                                 keyboardShouldPersistTaps="handled"
                                 className="flex-1"
-                                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 }}
+                                contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16 }}
                             >
                                 {/* Contact Information Section */}
                                 <View className="bg-white rounded-xl p-4 mb-4 shadow-sm">
@@ -438,13 +438,13 @@ export default function AddAddressForm() {
                             <View className="  h-24 right-0 bg-white px-4 py-3 shadow-lg">
                                 <TouchableOpacity
                                     onPress={() => handleSubmit()}
-                                    disabled={isSaving}
-                                    className={`rounded-lg py-3.5 ${isSaving ? 'bg-gray-400' : 'bg-primary'
+                                    disabled={isPending || isSaving}
+                                    className={`rounded-lg py-3.5 ${isPending || isSaving ? 'bg-gray-400' : 'bg-primary'
                                         }`}
                                     activeOpacity={0.8}
                                 >
                                     <Text className="text-white font-bold text-center text-[15px] font-sam-bold tracking-wide">
-                                        {isSaving ? "SAVING..." : "SAVE ADDRESS"}
+                                        {isPending || isSaving ? "SAVING..." : "SAVE ADDRESS"}
                                     </Text>
                                 </TouchableOpacity>
                             </View>

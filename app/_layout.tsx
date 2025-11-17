@@ -101,6 +101,62 @@ export default function RootLayout() {
                   options={{
                     headerShown: false,
                     animation: 'slide_from_right',
+                    title: 'Wishlist'
+                  }}
+                  name="wishlist"
+                />
+                 <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                    title: 'Saved Address'
+                  }}
+                  name="saved-address"
+                />
+                 <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                    title: 'Tracking'
+                  }}
+                  name="tracking"
+                />
+                 <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                    title: 'Help And Support'
+                  }}
+                  name="help-and-support"
+                />
+                 <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                    title: 'Edit Profile'
+                  }}
+                  name="edit-profile"
+                />
+                 <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                    title: 'My Orders'
+                  }}
+                  name="my-orders"
+                />
+                <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                    title: 'Order Details'
+                  }}
+                  name="order-details"
+                />
+                <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
                     title: 'Add Address'
                   }}
                   name="add-address"
@@ -119,6 +175,55 @@ export default function RootLayout() {
                     animation: 'slide_from_right'
                   }}
                   name="contact"
+                />
+                 <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right'
+                  }}
+                  name="about"
+                />
+                <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right'
+                  }}
+                  name="privacy"
+                />
+                <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right'
+                  }}
+                  name="terms"
+                />
+                <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right'
+                  }}
+                  name="return"
+                />
+                 <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right'
+                  }}
+                  name="shipping"
+                />
+                 <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right'
+                  }}
+                  name="payment-success"
+                />
+                 <Stack.Screen
+                  options={{
+                    headerShown: false,
+                    animation: 'slide_from_right'
+                  }}
+                  name="payment-faild"
                 />
                 <Stack.Screen
                   options={{

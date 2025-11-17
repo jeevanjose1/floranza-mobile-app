@@ -5,7 +5,7 @@ import { useAccountDetails } from '@/services/queries/account'
 import { useLogout } from '@/services/queries/auth'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useRouter } from 'expo-router'
+import { RelativePathString, useRouter } from 'expo-router'
 import React from 'react'
 import {
   ScrollView,
@@ -42,15 +42,19 @@ const Account = () => {
     {
       title: "Orders & Shopping",
       items: [
-        { icon: "cube-outline", label: "My Orders", badge: "3", color: "#ED2353" },
-        { icon: "heart-outline", label: "Wishlist", badge: "12", color: "#ED2353" },
+        { icon: "cube-outline", path:'/my-orders', label: "My Orders", badge: "3", color: "#ED2353" },
+        { icon: "heart-outline",  path:'/wishlist', label: "Wishlist", badge: "12", color: "#ED2353" },
+        { icon: "basket-outline",  path:'/tracking', label: "Track Yout Order", badge: "12", color: "#ED2353" },
+
       ]
     },
     {
       title: "Account Settings",
       items: [
-        { icon: "person-outline", label: "Edit Profile", color: "#ED2353" },
-        { icon: "location-outline", label: "Saved Addresses", color: "#ED2353" },
+        { icon: "person-outline",   path:'/edit-profile',label: "Edit Profile", color: "#ED2353" },
+        { icon: "location-outline",   path:'/saved-address',label: "Saved Addresses", color: "#ED2353" },
+        { icon: "help-buoy-outline",   path:'/help-and-support',label: "Help And Support", color: "#ED2353" },
+
       ]
     },
 
@@ -60,6 +64,10 @@ const Account = () => {
     return name?.split(' ')?.map(n => n[0])?.join('')
   }
   const { isWidth } = useBreakPoints({ breakPoint: 375 });
+
+  const handleGotoMenu = (path:RelativePathString)=>{
+    router.push(path)
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -95,6 +103,7 @@ const Account = () => {
               <View className="bg-white rounded-md shadow-sm overflow-hidden">
                 {section.items.map((item, itemIdx) => (
                   <TouchableOpacity
+                    onPress={()=>handleGotoMenu(item.path as RelativePathString)}
                     key={itemIdx}
                     className={`flex-row items-center justify-between p-4 ${itemIdx !== section.items.length - 1 ? 'border-b border-gray-100' : ''
                       }`}

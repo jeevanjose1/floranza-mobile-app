@@ -6,13 +6,14 @@ import { useAuthenticated } from '@/hooks/useAutheticated'
 import { calculate_discount, calculate_product_price } from '@/lib/utils'
 import { useAddToCart, useOutOfStock } from '@/services/queries/cart'
 import { useAddWishlist, useGetProductDetails } from '@/services/queries/product'
-import { Ionicons } from '@expo/vector-icons'
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useEffect, useRef, useState } from 'react'
-import { ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native'
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native'
 import RenderHtml from 'react-native-render-html'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
+
 type Props = {}
 
 const ProductDetails = (props: Props) => {
@@ -35,12 +36,10 @@ const ProductDetails = (props: Props) => {
         error,
     } = useGetProductDetails(slug) as any;
 
-
     const product = product_details?.data?.product;
     const catogery = product_details?.data?.category;
     const related = product_details?.data?.relatedProducts;
     const [variationIndex, setVariationIndex] = useState<any>(null);
-
 
     const filterd_data = related?.map((item: any) => {
         return {
@@ -54,6 +53,7 @@ const ProductDetails = (props: Props) => {
             is_new_product: item?.is_new_product
         };
     });
+    
     const stocks = Boolean(product?.qty) ? product?.qty : data?.data?.qty
 
     useEffect(() => {
@@ -75,8 +75,6 @@ const ProductDetails = (props: Props) => {
         }
     }, [selectedSize]);
 
-
-
     const price = calculate_product_price(product, variationIndex)
     const discount = calculate_discount(product?.price?.min, product?.price?.max)
 
@@ -90,7 +88,6 @@ const ProductDetails = (props: Props) => {
         const newExpandedState = expandedAccordion === section ? null : section
         setExpandedAccordion(newExpandedState)
     }
-
 
     const handleHandleSelectVariation = (size: any, index: number) => {
         if (selectedSize?.id === size.id) {
@@ -139,13 +136,11 @@ const ProductDetails = (props: Props) => {
                     type: 'info',
                     text1: error.data.message,
                 })
-
             }
         });
     };
 
     const handleBuyNow = () => {
-        // First add to cart then redirect
         if (!selectedSize && product?.variations?.length > 0) {
             Toast.show({
                 type: 'info',
@@ -162,7 +157,6 @@ const ProductDetails = (props: Props) => {
             return;
         }
 
-        // Add to cart then redirect to checkout
         const form_data = new FormData();
         form_data.append("guest_token", gToken as string);
         form_data.append("product_id", product.id);
@@ -179,7 +173,6 @@ const ProductDetails = (props: Props) => {
         });
     };
 
-
     const handleWishList = () => {
         if (isAuthenticated) {
             add_wishlist({
@@ -190,10 +183,8 @@ const ProductDetails = (props: Props) => {
                         type: 'success',
                         text1: response?.message,
                     });
-
                 },
                 onError: (error) => {
-
                     Toast.show({
                         type: 'error',
                         text1: error?.message,
@@ -203,11 +194,9 @@ const ProductDetails = (props: Props) => {
         } else {
             router.push('/login')
         }
-
     }
 
     const is_unlimited_qty = product?.data?.is_unlimited_qty
-
 
     const accordionData = [
         {
@@ -260,19 +249,50 @@ const ProductDetails = (props: Props) => {
         }
     }
 
+    // Loading State
+    if (isLoading) {
+        return (
+            <SafeAreaView className='flex-1' edges={['bottom', 'top']}>
+                <Header title={false} type='product_details' />
+                <View className='flex-1 justify-center items-center bg-white'>
+                    <ActivityIndicator size='large' color='#ED2353' />
+                    <Text className='mt-4 text-gray-600 text-base'>Loading product details...</Text>
+                </View>
+            </SafeAreaView>
+        )
+    }
+
+    // Error State
+    if (error || !product) {
+        return (
+            <SafeAreaView className='flex-1' edges={['bottom', 'top']}>
+                <Header title={false} type='product_details' />
+                <View className='flex-1 justify-center items-center bg-white px-8'>
+                    <MaterialCommunityIcons name='alert-circle-outline' size={80} color='#D1D5DB' />
+                    <Text className='mt-6 text-xl font-semibold text-gray-800'>Product Not Found</Text>
+                    <Text className='mt-2 text-center text-gray-500 text-base'>
+                        {error ? 'Something went wrong while loading the product.' : 'This product is not available or has been removed.'}
+                    </Text>
+                    <TouchableOpacity 
+                        onPress={() => router.back()}
+                        className='mt-6 px-6 py-3 bg-primary rounded-lg'
+                    >
+                        <Text className='text-white font-semibold'>Go Back</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        )
+    }
+
     return (
-        <SafeAreaView className='flex-1 ' edges={['bottom', 'top']}>
+        <SafeAreaView className='flex-1' edges={['bottom', 'top']}>
             <Header title={false} type='product_details' />
 
-            <ScrollView className='flex-1 '>
-                <View className=' bg-white  mb-2'>
+            <ScrollView className='flex-1'>
+                <View className='bg-white mb-2'>
                     <ImageSection data={product?.images} />
 
-                    {/* Product Title & Favorite */}
-
-
-
-                    <View className='flex-row px-4  items-start w-full justify-between mb-1'>
+                    <View className='flex-row px-4 items-start w-full justify-between mb-1'>
                         <Text numberOfLines={2} className='font-sam-bold max-w-[90%] text-lg'>
                             {product?.name}
                         </Text>
@@ -297,8 +317,7 @@ const ProductDetails = (props: Props) => {
                         </View> : null}
                     </View>
 
-                    {/* Size Selector */}
-                    {product?.is_variation && <View className=" mb-4 px-4 ">
+                    {product?.is_variation && <View className="mb-4 px-4">
                         <View className='flex-row justify-between items-center mb-3'>
                             <Text className="font-sam-medium text-base">
                                 Select Size
@@ -314,10 +333,9 @@ const ProductDetails = (props: Props) => {
                             {sizes.map((size: any, index: any) => (
                                 <View key={size.id} className='relative'>
                                     <TouchableOpacity
-
                                         onPress={() => handleHandleSelectVariation(size, index)}
                                         disabled={!size.qty && Boolean(!size?.is_unlimited_qty)}
-                                        className={` rounded-lg border min-w-min relative z-10 items-center ${selectedSize === size
+                                        className={`rounded-lg border min-w-min relative z-10 items-center ${selectedSize === size
                                             ? 'border-primary bg-primary/5'
                                             : 'border-gray-300 bg-white'
                                             }`}
@@ -338,45 +356,39 @@ const ProductDetails = (props: Props) => {
                                             </Text>
                                         </View>
                                     </TouchableOpacity>
-
                                 </View>
-
-
                             ))}
                             {selectedSize && !data?.data?.is_unlimited_qty &&
-                                (data?.data?.qty > 4 ? <View className=' h-10    flex items-center flex-row gap-2 justify-center -bottom-9   rounded-md '>
+                                (data?.data?.qty > 4 ? <View className='h-10 flex items-center flex-row gap-2 justify-center -bottom-9 rounded-md'>
                                     <View className='w-3 h-3 rounded-full bg-green-500' />
                                     <Text className='text-[13px] text-primary'>{data?.data?.qty} Stock Available</Text>
                                 </View>
                                     :
-                                    <View className=' h-10    flex items-center flex-row gap-2 justify-center -bottom-9   rounded-md '>
+                                    <View className='h-10 flex items-center flex-row gap-2 justify-center -bottom-9 rounded-md'>
                                         <View className='w-3 h-3 rounded-full bg-red-500' />
                                         <Text className='text-[13px] text-primary'>Only {data?.data?.qty} stocks left!</Text>
                                     </View>)
                             }
                         </View>
+                    </View>}
 
-                    </View>
-                    }
-                    {/* Quantity Selector */}
-                    <View className="mb-4 px-4 ">
+                    <View className="mb-4 px-4">
                         <QuantitySelector
                             quantity={quantity}
                             onQuantityChange={handleQuantityChange}
                             minQuantity={1}
                             maxQuantity={is_unlimited_qty ? 10000 : stocks}
                             showLabel={true}
-
                         />
                     </View>
                 </View>
-                <View className='p-4 bg-white  mb-2'>
+
+                <View className='p-4 bg-white mb-2'>
                     <Text className="font-sam-bold text-base mb-3">
                         Product Details
                     </Text>
 
-                    {/* Accordion Sections */}
-                    <View >
+                    <View>
                         {accordionData.map((item) => (
                             <View
                                 key={item.id}
@@ -417,18 +429,29 @@ const ProductDetails = (props: Props) => {
                         ))}
                     </View>
                 </View>
-                <View className='p-4 bg-white  '>
 
+                <View className='p-4 bg-white'>
                     <SimilarProducts data={filterd_data} />
                 </View>
             </ScrollView>
 
-            {/* Bottom Action Buttons */}
             <View className='px-4 h-20 py-4 w-full items-center bg-white gap-4 flex-row justify-center border-t border-gray-200'>
-                <TouchableOpacity onPress={handleAddToCart} className='flex-1 h-full px-6 items-center justify-center bg-primary rounded-lg'>
-                    <Text className='color-white font-sam-medium font-semibold'>ADD TO CART</Text>
+                <TouchableOpacity 
+                    onPress={handleAddToCart} 
+                    disabled={isPending}
+                    className='flex-1 h-full px-6 items-center justify-center bg-primary rounded-lg'
+                >
+                    {isPending ? (
+                        <ActivityIndicator color='white' />
+                    ) : (
+                        <Text className='color-white font-sam-medium font-semibold'>ADD TO CART</Text>
+                    )}
                 </TouchableOpacity>
-                <TouchableOpacity onPress={handleBuyNow} className='flex-1 h-full px-6 items-center justify-center border-2 border-primary rounded-lg'>
+                <TouchableOpacity 
+                    onPress={handleBuyNow} 
+                    disabled={isPending}
+                    className='flex-1 h-full px-6 items-center justify-center border-2 border-primary rounded-lg'
+                >
                     <Text className='color-primary font-sam-medium font-semibold'>BUY NOW</Text>
                 </TouchableOpacity>
             </View>

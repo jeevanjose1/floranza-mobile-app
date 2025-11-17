@@ -9,7 +9,7 @@ export const useAuthenticated = () => {
     const [gToken, setGToken] = useState<string | null>(null);
     const [cData, setCData] = useState<string | null>(null);
 
-    const checkAuthentication = async () => {
+    const checkAuthentication = useCallback(async () => {
         try {
             setIsLoading(true);
             const floranzaToken = await AsyncStorage.getItem("floranza-t-value");
@@ -18,23 +18,23 @@ export const useAuthenticated = () => {
 
             setToken(floranzaToken);
             setGToken(floranzaGToken);
-            setCData(floranzaCData)
+            setCData(floranzaCData);
             setIsAuthenticated(floranzaToken ? true : false);
         } catch (error) {
-            console.error("Error reading token from AsyncStorage:", error);
             setIsAuthenticated(false);
             setToken(null);
             setGToken(null);
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []); // Empty dependency array
 
     useFocusEffect(
         useCallback(() => {
             checkAuthentication();
         }, [checkAuthentication])
     );
+
     return {
         isAuthenticated,
         isLoading,
@@ -42,6 +42,5 @@ export const useAuthenticated = () => {
         gToken,
         cData,
         refetch: checkAuthentication,
-        
     };
 };

@@ -1,7 +1,7 @@
 import TabButton from '@/components/common/tab-button';
 import { useAuthenticated } from '@/hooks/useAutheticated';
 import useBreakPoints from '@/hooks/useBreajpoints';
-import { Tabs, useRouter } from 'expo-router';
+import { RelativePathString, Tabs, useRouter } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,8 +10,8 @@ export default function TabLayout() {
   const router = useRouter()
   const { isWidth } = useBreakPoints({ breakPoint: 375 });
   const {isAuthenticated} = useAuthenticated()
-  const handlePressNavigation = () => {
-    if(isAuthenticated)router.push('/account')
+  const handlePressNavigation = (path:RelativePathString) => {
+    if(isAuthenticated)router.push(path)
     else router.push('/login')
     
   }
@@ -39,8 +39,7 @@ export default function TabLayout() {
               />
 
               <TabButton
-                path={'/(tabs)/wishlist'}
-                isActive={state.index === 1}
+                onPress={()=>handlePressNavigation('/wishlist' as RelativePathString)}
                 icon={'heart'}
                 title='Wishlist'
               />
@@ -52,7 +51,7 @@ export default function TabLayout() {
                 title='Cart'
               />
               <TabButton
-                onPress={handlePressNavigation}
+                onPress={()=>handlePressNavigation('/account' as RelativePathString)}
                 icon={'user'}
                 title='Account'
               />
@@ -62,7 +61,7 @@ export default function TabLayout() {
         }}
       >
         <Tabs.Screen name="index" />
-        <Tabs.Screen name="wishlist" />
+
       </Tabs>
     </SafeAreaView>
   );

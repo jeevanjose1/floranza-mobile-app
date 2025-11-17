@@ -68,7 +68,7 @@ const MostSellingProducts = () => {
         }}
       />
       {hasNextPage && <View className="items-center">
-        <Button disabled={isFetchingNextPage} onPress={()=>fetchNextPage()} size='small' variant='primary' className='max-w-28' >{isFetchingNextPage ? <ActivityIndicator /> : <Text className=' font-sam-bold'>Show all</Text>}</Button>
+        <Button disabled={isFetchingNextPage} onPress={()=>fetchNextPage()} size='small' variant='primary' className='max-w-28' >{isFetchingNextPage ? <ActivityIndicator /> : <Text className=' font-sam-bold'>Show more</Text>}</Button>
 
       </View>}
 

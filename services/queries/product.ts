@@ -107,6 +107,31 @@ const useGetWishlist = (payload: any) => {
   });
 };
 
+const useGetWishlistInfinity = (payload: any) => {
+  return useInfiniteQuery({
+    queryKey: ["WISH_LIST_INFINITY", payload],
+    queryFn: ({ pageParam = 1 }) =>
+      fetcher({
+        type: "get",
+        url: `${WISHLIST.LIST}/${queryFilter(
+         { ...payload?.filter, page: pageParam},
+          
+        )}`,
+        
+      }),
+    initialPageParam: 1,
+    enabled:payload.enabled,
+    getNextPageParam: (lastPage, allPages) => {
+
+      const has_more = lastPage?.data?.pagination?.next_page_url;
+      if (has_more) {
+        return allPages.length + 1;
+      }
+      return undefined;
+    },
+  });
+};
+
 const useAddWishlist = () => {
   const query = useQueryClient();
   return useMutation({
@@ -135,7 +160,7 @@ const useDeleteWishlist = () => {
         type: "delete",
       }),
     onSuccess: (response) => {
-      query.invalidateQueries({ queryKey: ['WISHLIST'] })
+      query.invalidateQueries({ queryKey: ['WISH_LIST_INFINITY'] })
       return response;
     },
     onError: (error: any) => {
@@ -151,6 +176,7 @@ export {
   useGetProductListSearch,
   useGetProductsInfinity,
   useGetProductsSearchInfinity,
-  useGetWishlist
+  useGetWishlist,
+  useGetWishlistInfinity
 };
 

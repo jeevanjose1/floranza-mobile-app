@@ -1,9 +1,8 @@
 import { fetcher } from "@/lib/utils"
 import { PAYMENT } from "@/shared/urls/payment"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 
 const useRazorpayStatus = ()=>{
-    const query = useQueryClient()
     return useMutation({
         mutationFn:(payload:any)=>fetcher({
             url:`${PAYMENT.RAZORPAY}/${payload}`,
@@ -46,8 +45,5 @@ const useGetPaymentDetails = (payload:string) => {
       }),
   });
 };
-export {
-    useRazorpayStatus,
-    usePhonePeStatus,useGetPaymentDetails
-}
+export { useGetPaymentDetails, usePhonePeStatus, useRazorpayStatus }
 

@@ -4,6 +4,7 @@ import ChangeStateForm from "@/components/screens/cart/change-state"
 import { useAuthenticated } from "@/hooks/useAutheticated"
 import { useViewCart } from "@/services/queries/cart"
 import { indianStates } from "@/shared/others/others"
+import { MaterialCommunityIcons } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useRouter } from "expo-router"
 import React, { useState } from "react"
@@ -18,7 +19,6 @@ import {
 } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
-
 const getInitialState = (cData: string | null | undefined): string => {
   const DEFAULT_STATE = "KL"
   if (!cData) return DEFAULT_STATE
@@ -32,41 +32,33 @@ const getInitialState = (cData: string | null | undefined): string => {
   }
 }
 
-
 type CartItem = any
-
-// --- Main Component ---
 
 export default function Cart() {
   const { cData, gToken } = useAuthenticated()
   const [state, setState] = useState<string>(() => getInitialState(cData))
-  const [isStateModalVisible, setIsStateModalVisible] = useState(false) // Modal visibility state
+  const [isStateModalVisible, setIsStateModalVisible] = useState(false)
   const token = gToken
   const router = useRouter()
-  const { data: cart_items, isLoading } = useViewCart({
+  
+  const { data: cart_items, isLoading, error } = useViewCart({
     token: token,
     filter: {
-      state: state, // Pass state directly
+      state: state,
     },
   })
 
-  // --- Data & State Calculation ---
   const cart = cart_items?.data
   const cartItems: CartItem[] = cart?.cart || []
   const cartIsEmpty = !isLoading && cartItems.length === 0
 
-  // Safer calculations to prevent 'NaN' errors
   const subtotal = Number(cart?.sub_total || 0)
   const shipping = Number(cart?.shipping_charge || 0)
   const total = Number(cart?.total || 0)
 
-  // Helper to get full state name from abbreviation
   const currentSateLabel =
     indianStates.find((s) => s.code === state)?.name || state
 
-  // --- Action Handlers ---
-
-  
   const handleStateChange = async (newState: string) => {
     setState(newState)
     const data = {
@@ -74,56 +66,72 @@ export default function Cart() {
       state: newState,
     };
     try {
-      await AsyncStorage.setItem('floranza-c-data',JSON.stringify(data))
-      
+      await AsyncStorage.setItem('floranza-c-data', JSON.stringify(data))
     } catch (error) {
-      
-    }   
-    
-    setIsStateModalVisible(false) 
+      console.error("Failed to save state:", error)
+    }
+    setIsStateModalVisible(false)
   }
 
-  /**
-   * Placeholder for placing the order
-   */
   const handlePlaceOrder = () => {
-    if (cartIsEmpty || isLoading) return // Prevent action if disabled
+    if (cartIsEmpty || isLoading) return
     router.push('/checkout')
   }
 
-  // --- Render Functions ---
+  const handleStartShopping = () => {
+    router.push('/(tabs)')
+  }
 
-  /**
-   * Renders a loading spinner while the cart is being fetched.
-   */
+  // Loading State
   const renderLoading = () => (
     <View className="flex-1 items-center justify-center bg-gray-50">
-      <ActivityIndicator size="large" />
-      <Text className="mt-4 text-gray-600">Loading Your Cart...</Text>
+      <ActivityIndicator size="large" color="#ED2353" />
+      <Text className="mt-4 text-gray-600 text-base">Loading your cart...</Text>
     </View>
   )
 
-
-  const renderEmptyCart = () => (
-    <View className="flex-1 items-center justify-center bg-gray-50 p-8">
-      <Text className="text-2xl font-bold mb-3">Your Cart is Empty </Text>
-      <Text className="text-center text-gray-600">
-        Looks like you haven't added anything yet.
+  // Error State
+  const renderError = () => (
+    <View className="flex-1 items-center justify-center bg-gray-50 px-8">
+      <MaterialCommunityIcons name="alert-circle-outline" size={80} color="#D1D5DB" />
+      <Text className="mt-6 text-xl font-semibold text-gray-800">Failed to Load Cart</Text>
+      <Text className="mt-2 text-center text-gray-500 text-base">
+        Something went wrong while loading your cart. Please try again.
       </Text>
-      <TouchableOpacity className="mt-6 bg-primary rounded-lg py-3 px-8">
-        <Text className="text-white text-lg font-bold">Start Shopping</Text>
+      <TouchableOpacity 
+        onPress={() => window.location.reload()}
+        className="mt-6 bg-primary rounded-lg py-3 px-8"
+      >
+        <Text className="text-white text-base font-semibold">Retry</Text>
       </TouchableOpacity>
     </View>
   )
 
- 
+  // Empty Cart State
+  const renderEmptyCart = () => (
+    <View className="flex-1 items-center justify-center bg-gray-50 px-8">
+      <MaterialCommunityIcons name="cart-outline" size={80} color="#D1D5DB" />
+      <Text className="mt-6 text-xl font-semibold text-gray-800">Your Cart is Empty</Text>
+      <Text className="mt-2 text-center text-gray-500 text-base">
+        Looks like you haven't added anything yet. Start shopping to fill your cart!
+      </Text>
+      <TouchableOpacity 
+        onPress={handleStartShopping}
+        className="mt-6 bg-primary rounded-lg py-3 px-8"
+      >
+        <Text className="text-white text-base font-semibold">Start Shopping</Text>
+      </TouchableOpacity>
+    </View>
+  )
+
+  // Cart Content with Items
   const renderCartContent = () => (
     <>
       <ScrollView className="flex-1 bg-gray-50">
         <View className="p-4">
           {/* Cart Items */}
           <View className="mb-6">
-            {cartItems.map((item: CartItem,index:number) => (
+            {cartItems.map((item: CartItem, index: number) => (
               <CartItems key={index} item={item} />
             ))}
           </View>
@@ -155,7 +163,6 @@ export default function Cart() {
               <View className="flex-row justify-between items-start">
                 <View>
                   <Text className="text-gray-600 text-sm mb-1">Ship to</Text>
-                  {/* Make state dynamic */}
                   <Text className="font-semibold">{currentSateLabel}</Text>
                 </View>
                 <TouchableOpacity onPress={() => setIsStateModalVisible(true)}>
@@ -178,37 +185,47 @@ export default function Cart() {
             cartIsEmpty || isLoading ? "bg-gray-400" : "bg-primary"
           }`}
         >
-          <Text className="text-white text-lg font-bold">Place order</Text>
+          <Text className="text-white text-lg font-bold">Go To Checkout</Text>
         </TouchableOpacity>
       </View>
     </>
   )
 
-  // --- Main Return ---
+  // Main Render Logic
+  const renderContent = () => {
+    if (isLoading) {
+      return renderLoading()
+    }
+    
+    if (error) {
+      return renderError()
+    }
+    
+    if (cartIsEmpty) {
+      return renderEmptyCart()
+    }
+    
+    return renderCartContent()
+  }
+
   return (
-    <SafeAreaView className="flex-1" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
       <Header type="cart" title="Cart" />
-      {isLoading
-        ? renderLoading()
-        : cartIsEmpty
-        ? renderEmptyCart()
-        : renderCartContent()}
+      {renderContent()}
 
       <Modal
         animationType="fade"
         transparent={true}
         visible={isStateModalVisible}
-        onRequestClose={() => {
-          setIsStateModalVisible(false)
-        }}
+        onRequestClose={() => setIsStateModalVisible(false)}
       >
         <Pressable
           className="flex-1 justify-center items-center bg-black/50 p-4"
-          onPress={() => setIsStateModalVisible(false)} // Close on overlay press
+          onPress={() => setIsStateModalVisible(false)}
         >
           <Pressable
-            className="bg-white p-6 rounded-lg w-full"
-            onPress={() => {}} // Prevents modal from closing when pressing inside it
+            className="bg-white p-6 rounded-lg w-full max-w-md"
+            onPress={() => {}}
           >
             <ChangeStateForm
               currentState={state}

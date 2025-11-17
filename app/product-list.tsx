@@ -7,7 +7,7 @@ import { Sort } from '@/components/screens/product-list/sort'
 import useBreakPoints from '@/hooks/useBreajpoints'
 import { calculate_discount, calculate_product_price } from '@/lib/utils'
 import { useGetProductsInfinity } from '@/services/queries/product'
-import { Ionicons } from '@expo/vector-icons'
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { FlashList } from '@shopify/flash-list'
 import { useLocalSearchParams } from 'expo-router'
 import React, { useCallback, useState } from 'react'
@@ -34,16 +34,20 @@ const ProductList = () => {
   const {
     data: product,
     fetchNextPage,
+    isLoading,
     hasNextPage,
     isFetchingNextPage,
     refetch,
     isRefetching
-  } = useGetProductsInfinity({ slug,filter: {
+  } = useGetProductsInfinity({ 
+    slug,
+    filter: {
       material: selectedFilters?.materials[0],
       size: selectedFilters?.sizes[0],
       min_price: selectedFilters.priceRanges?.[0]?.split('-')[0],
       max_price: selectedFilters.priceRanges?.[0]?.split('-')[1],
-    }, })
+    }, 
+  })
 
   const catogery = product?.pages?.[0]?.data?.category || {}
   const flat_product = product ? product?.pages?.map((item: any) => item?.data?.products)?.flat() : []
@@ -64,8 +68,6 @@ const ProductList = () => {
   const handleCloseSort = () => setSortOpen(false)
   const handleOpenFilter = () => setFilterOpen(true)
   const handleCloseFilter = () => setFilterOpen(false)
-
-  
 
   const handleApplyFilters = () => {
     handleCloseFilter()
@@ -99,55 +101,73 @@ const ProductList = () => {
     )
   }
 
+  // Loading state for initial load
+  if (isLoading) {
+    return (
+      <SafeAreaView className='flex-1 bg-gray-50' edges={['top']}>
+        <Header type='product_list' title={catogery?.name} />
+        <Categories />
+        <View className='flex-1 justify-center items-center'>
+          <ActivityIndicator size='large' color='#ED2353' />
+          <Text className='mt-4 text-gray-600 text-base'>Loading products...</Text>
+        </View>
+      </SafeAreaView>
+    )
+  }
+
+  // Empty state when no products found
+  const renderEmptyState = () => (
+    <View className='flex-1 justify-center items-center px-8'>
+      <MaterialCommunityIcons name='package-variant' size={80} color='#D1D5DB' />
+      <Text className='mt-6 text-xl font-semibold text-gray-800'>No Products Found</Text>
+      <Text className='mt-2 text-center text-gray-500 text-base'>
+        We couldn't find any products matching your criteria. Try adjusting your filters.
+      </Text>
+    </View>
+  )
+
   return (
     <SafeAreaView className='flex-1 bg-gray-50' edges={['top']}>
       <Header type='product_list' title={catogery?.name} />
       <Categories />
 
-      <FlashList
-        data={filterd_data}
-        numColumns={numColumns}
-        key={numColumns}
-        className='px-4 mt-2'
-        renderItem={({ item }) => (
-          <View className='flex-1 p-1'>
-            <ProductCard
-              name={item?.title}
-              price={item.price?.min as any}
-              oldPrice={item.price?.max !== 0 && String(item.price?.max) as any}
-              discount={item.price?.max ? calculate_discount(item?.price?.min, item?.price?.max) as number : 0}
-              image={item.image}
-              slug={item.slug}
+      {filterd_data.length === 0 ? (
+        renderEmptyState()
+      ) : (
+        <FlashList
+          data={filterd_data}
+          numColumns={numColumns}
+          key={numColumns}
+          className='px-4 mt-2'
+          renderItem={({ item }) => (
+            <View className='flex-1 p-1'>
+              <ProductCard
+                name={item?.title}
+                price={item.price?.min as any}
+                oldPrice={item.price?.max !== 0 && String(item.price?.max) as any}
+                discount={item.price?.max ? calculate_discount(item?.price?.min, item?.price?.max) as number : 0}
+                image={item.image}
+                slug={item.slug}
+              />
+            </View>
+          )}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing || isRefetching}
+              onRefresh={onRefresh}
+              colors={['#ED2353']}
+              tintColor='#ED2353'
+              title='Pull to refresh'
+              titleColor='#ED2353'
             />
-          </View>
-        )}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing || isRefetching}
-            onRefresh={onRefresh}
-            colors={['#ED2353']}
-            tintColor='#ED2353'
-            title='Pull to refresh'
-            titleColor='#ED2353'
-          />
-        }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={renderFooter}
-      />
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={renderFooter}
+        />
+      )}
 
       <View className='w-full flex-row justify-between bg-white h-20 px-4 py-3'>
-        {/* <View className='flex-1 flex-row justify-center'>
-          <TouchableOpacity onPress={handleOpenSort}>
-            <View className='gap-2 items-center flex-row'>
-              <AntDesign name='sort-ascending' size={20} color='black' />
-              <Text>Sort</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        <View className='w-[.5px] h-8 bg-black/10' /> */}
-
         <View className='flex-1 flex-row justify-center'>
           <TouchableOpacity onPress={handleOpenFilter}>
             <View className='flex-1 gap-2 flex-row justify-center'>

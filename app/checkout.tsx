@@ -1,8 +1,10 @@
 import Header from "@/components/layout/header";
 import { useAuthenticated } from "@/hooks/useAutheticated";
-import { useApplyCoupon, useViewCart } from "@/services/queries/cart";
+import { useListAdderss } from "@/services/queries/account";
+import { useApplyCoupon, useCheckoutCart, useViewCart } from "@/services/queries/cart";
+import { usePhonePeStatus, useRazorpayStatus } from "@/services/queries/payment";
 import { indianStates } from "@/shared/others/others";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -18,7 +20,9 @@ import {
     TouchableOpacity,
     View
 } from "react-native";
+import RazorpayCheckout from 'react-native-razorpay';
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 import { FormInput, FormPicker } from "./add-address";
 
 // --- TYPES & CONSTANTS ---
@@ -35,7 +39,6 @@ type Address = {
     phone: string;
     email: string;
     shippingOption: string;
-    orderNote: string;
 };
 
 type CartItem = {
@@ -51,7 +54,7 @@ type CartItem = {
     };
 };
 
-type PaymentMethod = "phonepay" | "razorpay";
+type PaymentMethod = "PHONEPE" | "RAZORPAY";
 
 type DeliveryPreferences = {
     courier: string;
@@ -86,7 +89,7 @@ const getShippingLabel = (option: string) => {
 
 // --- REUSABLE CHILD COMPONENTS ---
 
-// 1. Order Summary
+// Order Summary
 const OrderSummary = React.memo(({ items }: { items: CartItem[] }) => (
     <View className="bg-white rounded-lg p-6 shadow-sm mb-4">
         <Text className="text-xl font-bold mb-4">Order Summary</Text>
@@ -98,7 +101,7 @@ const OrderSummary = React.memo(({ items }: { items: CartItem[] }) => (
                 >
                     <Image
                         source={{ uri: item?.image?.mini }}
-                        className="w-16 h-16 rounded-md"
+                        className="w-20 h-full rounded-md"
                         resizeMode="cover"
                     />
                     <View className="flex-1 ml-3">
@@ -119,11 +122,12 @@ const OrderSummary = React.memo(({ items }: { items: CartItem[] }) => (
                     </View>
                 </View>
             ))}
+
         </View>
     </View>
 ));
 
-// 2. Coupon Manager
+// Coupon Manager
 interface CouponManagerProps {
     token: string;
     onCouponChange: (discount: number) => void;
@@ -133,8 +137,7 @@ const CouponManager = ({ token, onCouponChange }: CouponManagerProps) => {
     const [couponCode, setCouponCode] = useState("");
     const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
-    const { mutateAsync: applyCoupon, isPending: isApplyingCoupon } =
-        useApplyCoupon();
+    const { mutateAsync: applyCoupon, isPending: isApplyingCoupon } = useApplyCoupon();
 
     const handleApplyCoupon = async () => {
         if (!couponCode.trim()) return;
@@ -187,8 +190,7 @@ const CouponManager = ({ token, onCouponChange }: CouponManagerProps) => {
             <TouchableOpacity
                 onPress={handleApplyCoupon}
                 disabled={isApplyingCoupon || !couponCode.trim()}
-                className={`bg-primary rounded-lg px-4 py-2 ${isApplyingCoupon || !couponCode.trim() ? "opacity-50" : ""
-                    }`}
+                className={`bg-primary rounded-lg px-4 py-2 ${isApplyingCoupon || !couponCode.trim() ? "opacity-50" : ""}`}
             >
                 <Text className="text-white font-semibold">
                     {isApplyingCoupon ? "Applying..." : "Apply"}
@@ -198,7 +200,7 @@ const CouponManager = ({ token, onCouponChange }: CouponManagerProps) => {
     );
 };
 
-// 3. Price Details
+// Price Details
 interface PriceDetailsProps {
     subtotal: number;
     shipping: number;
@@ -236,12 +238,10 @@ const PriceDetails = ({
                 </View>
             )}
 
-            {/* Coupon Section */}
             <View className="mb-3 pt-3 border-t border-gray-200">
                 <CouponManager token={token} onCouponChange={onCouponChange} />
             </View>
 
-            {/* Total */}
             <View className="border-t border-gray-200 pt-3 flex-row justify-between">
                 <Text className="text-lg font-bold">Total</Text>
                 <Text className="text-lg font-bold text-primary">
@@ -252,7 +252,7 @@ const PriceDetails = ({
     </View>
 );
 
-// 4. Address Manager
+// Address Manager
 interface AddressManagerProps {
     selectedAddress: Address | null;
     onSelectAddress: (address: Address) => void;
@@ -264,63 +264,112 @@ const AddressManager = ({
 }: AddressManagerProps) => {
     const [addresses, setAddresses] = useState<Address[]>([]);
     const router = useRouter()
+    const { data: addressData, isLoading } = useListAdderss()
+
+    const convertApiToAddress = (apiData: any): Address | null => {
+        if (!apiData?.data) return null;
+
+        return {
+            id: 'api-address',
+            fullName: apiData.data.fname || "",
+            country: apiData.data.country || "IN",
+            streetAddress: apiData.data.address_1 || "",
+            addressLine2: apiData.data.address_2 || "",
+            city: apiData.data.city || "",
+            state: apiData.data.state || "",
+            postcode: apiData.data.postcode || "",
+            phone: apiData.data.phone || "",
+            email: apiData.data.email || "",
+            shippingOption: 'standard'
+        };
+    };
 
     const getLocalAddress = async () => {
         try {
             const address = await AsyncStorage.getItem('@user_address') || ''
-            setAddresses([JSON.parse(address)])
-        } catch (error) {
+            const localAddress = address ? JSON.parse(address) : null;
 
+            const combinedAddresses: Address[] = [];
+
+            if (addressData?.success && addressData?.data) {
+                const apiAddress = convertApiToAddress(addressData);
+                if (apiAddress) {
+                    combinedAddresses.push(apiAddress);
+                }
+            }
+
+            if (localAddress) {
+                const isDuplicate = combinedAddresses.some(addr =>
+                    addr.streetAddress === localAddress.streetAddress &&
+                    addr.postcode === localAddress.postcode
+                );
+
+                if (!isDuplicate) {
+                    combinedAddresses.push({
+                        ...localAddress,
+                        id: localAddress.id || 'local-address'
+                    });
+                }
+            }
+
+            setAddresses(combinedAddresses);
+        } catch (error) {
+            console.error('Error loading addresses:', error);
         }
-    }
+    };
 
     useFocusEffect(
         useCallback(() => {
             getLocalAddress()
-        }, [])
-    )
+        }, [addressData])
+    );
 
     const handleGoToAddAddress = () => {
         router.push('/add-address')
     }
 
     return (
-        <>
-            <View className="bg-white rounded-lg p-6 shadow-sm mb-4">
-                <View className="flex-row justify-between items-center mb-4">
-                    <Text className="text-xl font-bold">Delivery Address</Text>
-                   {!addresses.length && <TouchableOpacity
+        <View className="bg-white rounded-lg p-6 shadow-sm mb-4">
+            <View className="flex-row justify-between items-center mb-4">
+                <Text className="text-xl font-bold">Delivery Address</Text>
+                {!addresses.length && (
+                    <TouchableOpacity
                         onPress={handleGoToAddAddress}
                         className="flex-row items-center"
                     >
                         <Text className="text-primary font-semibold ml-1">
                             Add Address
                         </Text>
-                    </TouchableOpacity>}
-                </View>
-
-                {addresses.length === 0 ? (
-                    <View className="items-center py-8">
-                        <Ionicons name="location-outline" size={48} color="#9CA3AF" />
-                        <Text className="text-gray-600 mt-2">No address added yet</Text>
-                        <Text className="text-gray-500 text-sm mt-1">
-                            Add an address to continue
-                        </Text>
-                    </View>
-                ) : (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        {addresses.map((address, index) => (
-                            <AddressCard
-                                key={index}
-                                address={address}
-                                isSelected={selectedAddress?.id === address.id}
-                                onPress={() => onSelectAddress(address)}
-                            />
-                        ))}
-                    </ScrollView>
+                    </TouchableOpacity>
                 )}
             </View>
-        </>
+
+            {isLoading ? (
+                <View className="items-center py-8">
+                    <ActivityIndicator size="small" color="#ED2353" />
+                    <Text className="text-gray-600 mt-2">Loading addresses...</Text>
+                </View>
+            ) : addresses.length === 0 ? (
+                <View className="items-center py-8">
+                    <Ionicons name="location-outline" size={48} color="#9CA3AF" />
+                    <Text className="text-gray-600 mt-2">No address added yet</Text>
+                    <Text className="text-gray-500 text-sm mt-1">
+                        Add an address to continue
+                    </Text>
+                </View>
+            ) : (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {addresses.map((address, index) => (
+                        <AddressCard
+                            key={address.id || index}
+                            address={address}
+                            isSelected={selectedAddress?.id === address.id}
+                            onPress={() => onSelectAddress(address)}
+                        />
+                    ))}
+                </ScrollView>
+            )}
+        </View>
     );
 };
 
@@ -333,52 +382,48 @@ const AddressCard = ({
     isSelected: boolean;
     onPress: () => void;
 }) => {
-
     const router = useRouter()
     const handleEditAddress = () => {
         router.push({
-            pathname:'/add-address',
-            params:{
-                isEdit:1
-            }
+            pathname: '/add-address',
+            params: { isEdit: 1 }
         })
     }
-    return <TouchableOpacity
-        onPress={onPress}
-        className={`mr-3 p-4 rounded-lg border min-w-[280] ${isSelected ? "border-primary bg-blue-50" : "border-gray-200 bg-white"
-            }`}
-    >
-        <View className="flex-row items-start justify-between mb-2">
-            <Text className="font-bold text-base flex-1">{address.fullName}</Text>
-            <View className="flex-row items-center gap-3">
-                <TouchableOpacity onPress={handleEditAddress}>
-                    <FontAwesome name="edit" size={20} color="black" />
-                </TouchableOpacity>
+
+    return (
+        <TouchableOpacity
+            onPress={onPress}
+            className={`mr-3 p-4 rounded-lg border min-w-[280] ${isSelected ? "border-primary bg-blue-50" : "border-gray-200 bg-white"
+                }`}
+        >
+            <View className="flex-row items-start justify-between mb-2">
+                <Text className="font-bold text-base flex-1">{address.fullName}</Text>
+                <View className="flex-row items-center gap-3">
+                    <TouchableOpacity onPress={handleEditAddress}>
+                        <FontAwesome name="edit" size={20} color="black" />
+                    </TouchableOpacity>
+                </View>
             </View>
-        </View>
-        <Text className="text-gray-600 text-sm mb-1">
-            {address.streetAddress}
-        </Text>
-        {address.addressLine2 && (
+            <Text className="text-gray-600 text-sm mb-1">{address.streetAddress}</Text>
+            {address.addressLine2 && (
+                <Text className="text-gray-600 text-sm mb-1">{address.addressLine2}</Text>
+            )}
             <Text className="text-gray-600 text-sm mb-1">
-                {address.addressLine2}
+                {address.city}, {getStateName(address.state)} - {address.postcode}
             </Text>
-        )}
-        <Text className="text-gray-600 text-sm mb-1">
-            {address.city}, {getStateName(address.state)} - {address.postcode}
-        </Text>
-        <Text className="text-gray-600 text-sm mb-1">Phone: {address.phone}</Text>
-        <Text className="text-gray-600 text-sm mb-2">Email: {address.email}</Text>
-        <View className="flex-row items-center mt-2">
-            <Ionicons name="car-outline" size={16} color="#6B7280" />
-            <Text className="text-gray-600 text-sm ml-1">
-                {getShippingLabel(address.shippingOption)}
-            </Text>
-        </View>
-    </TouchableOpacity>
+            <Text className="text-gray-600 text-sm mb-1">Phone: {address.phone}</Text>
+            <Text className="text-gray-600 text-sm mb-2">Email: {address.email}</Text>
+            <View className="flex-row items-center mt-2">
+                <Ionicons name="car-outline" size={16} color="#6B7280" />
+                <Text className="text-gray-600 text-sm ml-1">
+                    {getShippingLabel(address.shippingOption)}
+                </Text>
+            </View>
+        </TouchableOpacity>
+    )
 }
 
-// 5. Delivery Preferences Manager
+// Delivery Preferences Manager
 interface DeliveryPreferencesManagerProps {
     preferences: DeliveryPreferences;
     errors: DeliveryErrors;
@@ -397,14 +442,13 @@ const DeliveryPreferencesManager = ({
     onInstructionsBlur,
 }: DeliveryPreferencesManagerProps) => {
     const shippingOptions = [
-        { value: "dtdc", label: "DTDC" },
-        { value: "india_post", label: "India Post" },
+        { value: "DTDC", label: "DTDC" },
+        { value: "INDIA_POST", label: "India Post" },
     ];
 
     return (
         <View className="bg-white rounded-lg p-6 shadow-sm mb-4">
             <Text className="text-xl font-bold mb-4">Delivery Preferences</Text>
-
             <FormPicker
                 label="Preferred Courier"
                 selectedValue={preferences.courier}
@@ -414,7 +458,6 @@ const DeliveryPreferencesManager = ({
                 error={errors.courier}
                 touched={touched.courier}
             />
-
             <FormInput
                 label="Delivery Instructions"
                 isOptional
@@ -431,7 +474,7 @@ const DeliveryPreferencesManager = ({
     );
 };
 
-// 6. Payment Selector
+// Payment Selector
 interface PaymentSelectorProps {
     selectedMethod: PaymentMethod | null;
     onSelectMethod: (method: PaymentMethod) => void;
@@ -445,24 +488,24 @@ const PaymentSelector = ({
         <Text className="text-xl font-bold mb-4">Payment Method</Text>
         <View>
             <PaymentOption
-                method="phonepay"
+                method="PHONEPE"
                 label="PhonePe"
                 description="Pay using PhonePe"
                 icon="phone-portrait"
                 iconColor="#FF6B35"
                 bgColor="bg-orange-100"
-                isSelected={selectedMethod === "phonepay"}
-                onPress={() => onSelectMethod("phonepay")}
+                isSelected={selectedMethod === "PHONEPE"}
+                onPress={() => onSelectMethod("PHONEPE")}
             />
             <PaymentOption
-                method="razorpay"
+                method="RAZORPAY"
                 label="Razorpay"
                 description="Pay using Razorpay"
                 icon="card"
                 iconColor="#6366F1"
                 bgColor="bg-indigo-100"
-                isSelected={selectedMethod === "razorpay"}
-                onPress={() => onSelectMethod("razorpay")}
+                isSelected={selectedMethod === "RAZORPAY"}
+                onPress={() => onSelectMethod("RAZORPAY")}
             />
         </View>
     </View>
@@ -491,22 +534,18 @@ const PaymentOption = ({
         className={`flex-row items-center p-4 rounded-lg border-2 mb-3 ${isSelected ? "border-primary bg-blue-50" : "border-gray-200 bg-white"
             }`}
     >
-        <View
-            className={`w-12 h-12 ${bgColor} rounded-lg items-center justify-center mr-3`}
-        >
+        <View className={`w-12 h-12 ${bgColor} rounded-lg items-center justify-center mr-3`}>
             <Ionicons name={icon} size={24} color={iconColor} />
         </View>
         <View className="flex-1">
             <Text className="font-semibold text-base">{label}</Text>
             <Text className="text-gray-600 text-sm">{description}</Text>
         </View>
-        {isSelected && (
-            <Ionicons name="checkmark-circle" size={24} color="#3B82F6" />
-        )}
+        {isSelected && <Ionicons name="checkmark-circle" size={24} color="#3B82F6" />}
     </TouchableOpacity>
 );
 
-// 7. Place Order Footer
+// Place Order Footer
 interface PlaceOrderFooterProps {
     total: number;
     onPress: () => void;
@@ -522,8 +561,7 @@ const PlaceOrderFooter = ({
         <TouchableOpacity
             onPress={onPress}
             disabled={disabled}
-            className={`rounded-lg py-3 items-center ${disabled ? "bg-gray-400" : "bg-primary"
-                }`}
+            className={`rounded-lg py-3 items-center ${disabled ? "bg-gray-400" : "bg-primary"}`}
         >
             <Text className="text-white text-lg font-bold">
                 Place Order - ₹{total.toFixed(2)}
@@ -537,14 +575,17 @@ const PlaceOrderFooter = ({
 const Checkout = () => {
     const { cData, gToken } = useAuthenticated();
     const token = gToken;
+    const router = useRouter();
 
     const [state] = useState<string>(() => getInitialState(cData));
     const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
-    const [selectedPaymentMethod, setSelectedPaymentMethod] =
-        useState<PaymentMethod | null>(null);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
     const [couponDiscount, setCouponDiscount] = useState(0);
-
-    // Delivery preferences state
+    const { mutateAsync: checkout } = useCheckoutCart();
+    const { mutateAsync: get_status } =
+        useRazorpayStatus();
+    const { mutateAsync: get_status_phone_pe } =
+        usePhonePeStatus();
     const [deliveryPreferences, setDeliveryPreferences] = useState<DeliveryPreferences>({
         courier: "",
         instructions: "",
@@ -556,20 +597,17 @@ const Checkout = () => {
         instructions: false,
     });
 
-    // Fetch cart data
-    const { data: cart_items, isLoading } = useViewCart({
+    const { data: cart_items, isLoading, error } = useViewCart({
         token: token,
         filter: { state: state },
     });
 
-    // Cart data
     const cart = cart_items?.data;
     const cartItems: CartItem[] = cart?.cart || [];
     const subtotal = Number(cart?.sub_total || 0);
     const shipping = Number(cart?.shipping_charge || 0);
     const total = Number(cart?.total || 0) - couponDiscount;
 
-    // Validation function
     const validateDeliveryPreferences = (): boolean => {
         const errors: DeliveryErrors = {};
         let isValid = true;
@@ -579,43 +617,111 @@ const Checkout = () => {
             isValid = false;
         }
 
-        // Instructions are optional, so no validation needed
-
         setDeliveryErrors(errors);
         return isValid;
     };
 
-    // Handle place order
+    const handleRazorpaySubmit = (response: any) => {
+        const razorpay_data = response?.pg?.RAZORPAY;
+        const razopay_data = {
+            description: razorpay_data?.description,
+            currency: 'INR',
+            key: razorpay_data?.key, // Your api key
+            amount: response?.total,
+            name: razorpay_data?.name,
+            prefill: {
+                email: razorpay_data?.email,
+                contact: razorpay_data?.contact,
+                name: 'Razorpay Software'
+            },
+            theme: { color: "#F37254" }
+        }
+        RazorpayCheckout?.open(razopay_data as any).then((data) => {
+                console.log(data,'asdasd')
+            // handle success
+            get_status(data?.razorpay_payment_id, {
+                onSuccess: (res) => {
+                    router.replace({
+                        pathname: `/payment-success`,
+                        params: { order_id: res?.data?.order_id }
+                    });
+                },
+                onError: () => {
+                    router.replace("/payment-faild");
+                },
+            });
+        }).catch((error) => {
+            console.log(error, 'error')
+        });
+
+
+    };
+
+
+
     const handlePlaceOrder = () => {
-        // Mark all fields as touched
         setDeliveryTouched({
             courier: true,
             instructions: true,
         });
 
-        // Validate all required fields
         const isDeliveryValid = validateDeliveryPreferences();
 
-        if (!selectedAddress) {
-            return;
-        }
+        if (!selectedAddress) return;
+        if (!selectedPaymentMethod) return;
+        if (!isDeliveryValid) return;
+        const dataObject = {
+            fname: selectedAddress?.fullName,
+            country: selectedAddress?.country,
+            address_1: `${selectedAddress?.streetAddress}, ${selectedAddress?.addressLine2}`,
+            city: selectedAddress?.city,
+            state: selectedAddress?.state,
+            postcode: selectedAddress?.postcode,
+            phone: selectedAddress?.phone,
+            email: selectedAddress?.email,
+            courier: deliveryPreferences?.courier,
+            notes: deliveryPreferences?.instructions,
+            order_via: "MOBILE",
+            pg: cart_items?.data?.total === 0 ? "WALLET" : selectedPaymentMethod,
+            ...(couponDiscount && { coupon_code: String(couponDiscount) }),
+        };
 
-        if (!selectedPaymentMethod) {
-            return;
-        }
 
-        if (!isDeliveryValid) {
-            return;
-        }
+        checkout(
+            {
+                data: dataObject,
+                token: token,
+            },
+            {
+                onSuccess: (response) => {
 
-     
+                    const payment_type = response?.data?.pg ? Object.keys(response?.data?.pg)?.[0] : false;
 
-        // TODO: Implement order placement logic
+                    if (payment_type === "RAZORPAY") {
+                        handleRazorpaySubmit(response?.data);
+                    } else if (payment_type === "PHONEPE") {
+                        // handlePhonepaySubmit(response?.data);
+                    }
+
+                    else {
+                        router.replace(`/payment-success?order_id=${response?.data?.order_id}`);
+                    }
+                },
+                onError: (error: any) => {
+                    console.log(error, 'asdasdcc')
+                    Toast.show({
+                        type: 'error',
+                        text1: error?.data?.message
+                    })
+
+                },
+            }
+        );
     };
+
 
     const handleCourierChange = (value: string) => {
         setDeliveryPreferences(prev => ({ ...prev, courier: value }));
-        // Clear error when user selects a value
         if (value && deliveryErrors.courier) {
             setDeliveryErrors(prev => ({ ...prev, courier: undefined }));
         }
@@ -625,27 +731,62 @@ const Checkout = () => {
         setDeliveryPreferences(prev => ({ ...prev, instructions: value }));
     };
 
-    const handleCourierBlur = () => {
-        setDeliveryTouched(prev => ({ ...prev, courier: true }));
-        if (!deliveryPreferences.courier) {
-            setDeliveryErrors(prev => ({ 
-                ...prev, 
-                courier: "Please select a preferred courier" 
-            }));
-        }
-    };
-
     const handleInstructionsBlur = () => {
         setDeliveryTouched(prev => ({ ...prev, instructions: true }));
     };
 
+    // Loading State
     if (isLoading) {
         return (
-            <SafeAreaView className="flex-1" edges={["top"]}>
+            <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
                 <Header type="cart" title="Checkout" />
-                <View className="flex-1 items-center justify-center bg-gray-50">
-                    <ActivityIndicator size="large" />
-                    <Text className="mt-4 text-gray-600">Loading checkout...</Text>
+                <View className="flex-1 items-center justify-center">
+                    <ActivityIndicator size="large" color="#ED2353" />
+                    <Text className="mt-4 text-gray-600 text-base">Loading checkout...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    // Error State
+    if (error) {
+        return (
+            <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
+                <Header type="cart" title="Checkout" />
+                <View className="flex-1 items-center justify-center px-8">
+                    <MaterialCommunityIcons name="alert-circle-outline" size={80} color="#D1D5DB" />
+                    <Text className="mt-6 text-xl font-semibold text-gray-800">Failed to Load Checkout</Text>
+                    <Text className="mt-2 text-center text-gray-500 text-base">
+                        Something went wrong while loading checkout. Please try again.
+                    </Text>
+                    <TouchableOpacity
+                        onPress={() => router.back()}
+                        className="mt-6 bg-primary rounded-lg py-3 px-8"
+                    >
+                        <Text className="text-white text-base font-semibold">Go Back</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    // Empty Cart
+    if (cartItems.length === 0) {
+        return (
+            <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
+                <Header type="cart" title="Checkout" />
+                <View className="flex-1 items-center justify-center px-8">
+                    <MaterialCommunityIcons name="cart-outline" size={80} color="#D1D5DB" />
+                    <Text className="mt-6 text-xl font-semibold text-gray-800">Your Cart is Empty</Text>
+                    <Text className="mt-2 text-center text-gray-500 text-base">
+                        Add some items to your cart before checking out
+                    </Text>
+                    <TouchableOpacity
+                        onPress={() => router.push('/(tabs)')}
+                        className="mt-6 bg-primary rounded-lg py-3 px-8"
+                    >
+                        <Text className="text-white text-base font-semibold">Start Shopping</Text>
+                    </TouchableOpacity>
                 </View>
             </SafeAreaView>
         );
@@ -654,28 +795,23 @@ const Checkout = () => {
     const isPlaceOrderDisabled = !selectedAddress || !selectedPaymentMethod;
 
     return (
-        <SafeAreaView className="flex-1" edges={["top"]}>
+        <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
             <Header type="cart" title="Checkout" />
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 className="flex-1"
             >
                 <ScrollView
-                    className="flex-1 bg-gray-50"
+                    className="flex-1"
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
                 >
                     <View className="p-4">
-                        {/* Order Summary */}
                         <OrderSummary items={cartItems} />
-
-                        {/* Address Section */}
                         <AddressManager
                             selectedAddress={selectedAddress}
                             onSelectAddress={setSelectedAddress}
                         />
-
-                        {/* Delivery Preferences Section */}
                         <DeliveryPreferencesManager
                             preferences={deliveryPreferences}
                             errors={deliveryErrors}
@@ -684,14 +820,10 @@ const Checkout = () => {
                             onInstructionsChange={handleInstructionsChange}
                             onInstructionsBlur={handleInstructionsBlur}
                         />
-
-                        {/* Payment Method Section */}
                         <PaymentSelector
                             selectedMethod={selectedPaymentMethod}
                             onSelectMethod={setSelectedPaymentMethod}
                         />
-
-                        {/* Price Breakdown & Coupon */}
                         <PriceDetails
                             subtotal={subtotal}
                             shipping={shipping}
@@ -703,7 +835,6 @@ const Checkout = () => {
                     </View>
                 </ScrollView>
 
-                {/* Place Order Button */}
                 <PlaceOrderFooter
                     total={total}
                     onPress={handlePlaceOrder}

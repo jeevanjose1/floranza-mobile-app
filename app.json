@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "floranza-mobile-app",
-    "slug": "floranza-mobile-app",
+    "slug": "floranza",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/logo-square.png",
@@ -51,8 +51,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "89f91f5f-b5b7-4cc2-9bc8-f0dfca684e8f"
+        "projectId": "9ef8e0b1-d0cb-4c08-b75a-f1b9689f4e37"
       }
-    }
+    },
+    "owner": "jeevan166s-organization"
   }
 }
