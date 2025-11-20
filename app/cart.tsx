@@ -27,7 +27,6 @@ const getInitialState = (cData: string | null | undefined): string => {
     const parsedData = JSON.parse(cData as string)
     return parsedData?.state || DEFAULT_STATE
   } catch (error) {
-    console.warn("Failed to parse initial state data:", error)
     return DEFAULT_STATE
   }
 }

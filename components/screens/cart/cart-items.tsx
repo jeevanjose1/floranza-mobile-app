@@ -18,6 +18,8 @@ type CartItemData = {
     attributeOption?: string;
     price: number;
     is_out_of_stock: boolean,
+    is_unlimited_qty:boolean,
+    mainQty:number,
     image?: {
         mini: string;
     };
@@ -32,11 +34,11 @@ const CartItems = ({ item }: CartItemsProps) => {
     const prevQuantityRef = useRef<number>(item?.cart_qty || 0);
     const [quantity, setQuantity] = useState<number>(item?.cart_qty || 1);
 
-    const { gToken: token } = useAuthenticated(); // Destructure and rename gToken to token
+    const { gToken: token } = useAuthenticated();
     const router = useRouter();
 
-    const { mutateAsync: removeCartItem, isPending: isRemoving } = useDeleteCart(); // Rename for clarity
-    const { mutateAsync: updateCartItem, error } = useAddToCart(); // Rename for clarity
+    const { mutateAsync: removeCartItem, isPending: isRemoving } = useDeleteCart();
+    const { mutateAsync: updateCartItem, error } = useAddToCart();
 
     // --- Effects ---
 
@@ -47,7 +49,6 @@ const CartItems = ({ item }: CartItemsProps) => {
         }
         prevQuantityRef.current = item?.cart_qty || 0;
     }, [item?.cart_qty]);
-
 
     // --- Handlers ---
 
@@ -69,24 +70,22 @@ const CartItems = ({ item }: CartItemsProps) => {
 
         const qtyChange = newCount > prevQuantityRef.current ? 1 : -1;
 
-        const form_data = new FormData();
-        const fields = [
-            ["guest_token", token],
-            ["prd_var_value_id", item?.prd_var_value_id],
-            ["product_id", item?.product_id],
-            ["qty", qtyChange.toString()],
-        ];
+       
 
-        fields.forEach(([key, value]) => {
-            form_data.append(key as string, value as string);
-        });
+        const form_data = {
+            guest_token:token,
+            prd_var_value_id:item?.prd_var_value_id,
+            product_id:item?.product_id,
+            qty:qtyChange.toString()
+        }
+
 
         prevQuantityRef.current = newCount;
 
         updateCartItem(form_data, {
             onError: (err) => {
-                console.error('Failed to update cart quantity:', err);
-                // We might need to fetch the true cart state here, or rollback the state to prevQuantityRef.current
+                // Rollback to previous quantity on error
+                setQuantity(prevQuantityRef.current);
             },
         });
     }, [token, item?.prd_var_value_id, item?.product_id, updateCartItem]);
@@ -95,7 +94,6 @@ const CartItems = ({ item }: CartItemsProps) => {
     const handleQuantityChange = useCallback((newCount: number) => {
         // Only proceed if the count has actually changed and is valid (non-negative)
         if (newCount !== quantity && newCount >= 0) {
-
             // Update local state immediately for a responsive UI
             setQuantity(newCount);
 
@@ -110,13 +108,28 @@ const CartItems = ({ item }: CartItemsProps) => {
         }
     }, [quantity, handleRemoveItem, handleUpdateCartQuantity]);
 
+    // --- Calculate stock availability ---
+    const isOutOfStock = item?.is_out_of_stock || 
+                         error?.data?.message === "the product is currently out of stock.";
+    
+    // Determine max quantity based on stock status
+    const getMaxQuantity = () => {
+        if (isOutOfStock) {
+            // If out of stock, user can only maintain or decrease current quantity
+            return quantity;
+        }
+        
+        if (item?.is_unlimited_qty) {
+            return 500; // Unlimited stock
+        }
+        
+        // Limited stock - use mainQty as the maximum
+        return item?.mainQty || 99;
+    };
+
+    const maxQuantity = getMaxQuantity();
 
     // --- Render ---
-
-    // Guard clause if item is not fully loaded/valid (optional but good practice)
-    //   if (!item || !item.id) {
-    //     return null;
-    //   }
 
     return (
         <View key={item.id} className="bg-white rounded-md p-4 shadow-sm mb-4">
@@ -138,6 +151,13 @@ const CartItems = ({ item }: CartItemsProps) => {
                         <Text className="text-lg font-bold text-primary">
                             ₹{item.price.toFixed(2)}
                         </Text>
+                        
+                        {/* Stock status indicator */}
+                        {!item?.is_unlimited_qty && !isOutOfStock && item?.mainQty <= 10 && (
+                            <Text className="text-orange-500 text-xs mt-1">
+                                Only {item.mainQty} left in stock
+                            </Text>
+                        )}
                     </View>
                 </View>
             </TouchableOpacity>
@@ -147,21 +167,30 @@ const CartItems = ({ item }: CartItemsProps) => {
                 <QuantitySelector
                     quantity={quantity}
                     onQuantityChange={handleQuantityChange}
-
                     minQuantity={1}
-                    maxQuantity={error?.data?.message == "the product is currently out of stock." ? quantity : 99}
+                    maxQuantity={maxQuantity}
                     showLabel={false}
                 />
 
-                <TouchableOpacity onPress={handleRemoveItem} className="px-4 py-2" disabled={isRemoving}>
-                    <Ionicons name="trash" size={24} color={isRemoving ? 'lightgray' : 'gray'} />
+                <TouchableOpacity 
+                    onPress={handleRemoveItem} 
+                    className="px-4 py-2" 
+                    disabled={isRemoving}
+                >
+                    <Ionicons 
+                        name="trash" 
+                        size={24} 
+                        color={isRemoving ? 'lightgray' : 'gray'} 
+                    />
                 </TouchableOpacity>
             </View>
-            {(item?.is_out_of_stock ||
-                error?.data?.message ===
-                "the product is currently out of stock.") && (
-                    <Text className="mt-1 text-primary text-sm text-main italic">Out of stock</Text>
-                )}
+            
+            {/* Out of stock warning */}
+            {isOutOfStock && (
+                <Text className="mt-1 text-primary text-sm italic">
+                    Out of stock - You can only decrease quantity
+                </Text>
+            )}
         </View>
     );
 };

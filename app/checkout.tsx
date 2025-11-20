@@ -264,7 +264,8 @@ const AddressManager = ({
 }: AddressManagerProps) => {
     const [addresses, setAddresses] = useState<Address[]>([]);
     const router = useRouter()
-    const { data: addressData, isLoading } = useListAdderss()
+    const {isAuthenticated } = useAuthenticated()
+    const { data: addressData, isLoading } = useListAdderss(isAuthenticated)
 
     const convertApiToAddress = (apiData: any): Address | null => {
         if (!apiData?.data) return null;
@@ -599,7 +600,7 @@ const Checkout = () => {
 
     const { data: cart_items, isLoading, error } = useViewCart({
         token: token,
-        filter: { state: state },
+        filter: { state: selectedAddress?.state || state },
     });
 
     const cart = cart_items?.data;
@@ -622,40 +623,51 @@ const Checkout = () => {
     };
 
     const handleRazorpaySubmit = (response: any) => {
-        const razorpay_data = response?.pg?.RAZORPAY;
-        const razopay_data = {
-            description: razorpay_data?.description,
-            currency: 'INR',
-            key: razorpay_data?.key, // Your api key
-            amount: response?.total,
-            name: razorpay_data?.name,
-            prefill: {
-                email: razorpay_data?.email,
-                contact: razorpay_data?.contact,
-                name: 'Razorpay Software'
-            },
-            theme: { color: "#F37254" }
-        }
-        RazorpayCheckout?.open(razopay_data as any).then((data) => {
-                console.log(data,'asdasd')
-            // handle success
-            get_status(data?.razorpay_payment_id, {
-                onSuccess: (res) => {
-                    router.replace({
-                        pathname: `/payment-success`,
-                        params: { order_id: res?.data?.order_id }
-                    });
-                },
-                onError: () => {
-                    router.replace("/payment-faild");
-                },
-            });
-        }).catch((error) => {
-            console.log(error, 'error')
-        });
+  const razorpay_data = response?.pg?.RAZORPAY;
+  console.log("raw response:", response);
+
+  // parse total safely (handles "799.00" strings etc.)
+  const totalNumber = Number.parseFloat(response?.total ?? 0);
+  // convert to paise (smallest unit) and round to integer
+  const amountPaise = Math.round(totalNumber * 100);
+
+  const razopay_data = {
+    description: razorpay_data?.description,
+    currency: "INR",
+    key: razorpay_data?.key,
+    // Razorpay expects amount in paise (integer)
+    amount: amountPaise,
+    name: razorpay_data?.name,
+    order_id: razorpay_data?.order_id, // include if available
+    prefill: {
+      email: razorpay_data?.prefill?.email ?? razorpay_data?.email ?? "",
+      contact: razorpay_data?.prefill?.contact ?? razorpay_data?.contact ?? "",
+      name: razorpay_data?.prefill?.name ?? razorpay_data?.name ?? "",
+    },
+    theme: { color: "#F37254" },
+  };
 
 
-    };
+  RazorpayCheckout?.open(razopay_data as any)
+    .then((data) => {
+      // handle success
+      get_status(data?.razorpay_payment_id, {
+        onSuccess: (res) => {
+          router.replace({
+            pathname: `/payment-success`,
+            params: { order_id: res?.data?.order_id },
+          });
+        },
+        onError: () => {
+          router.replace("/payment-faild");
+        },
+      });
+    })
+    .catch((error) => {
+      console.log(error, "error");
+    });
+};
+
 
 
 
@@ -708,7 +720,6 @@ const Checkout = () => {
                     }
                 },
                 onError: (error: any) => {
-                    console.log(error, 'asdasdcc')
                     Toast.show({
                         type: 'error',
                         text1: error?.data?.message

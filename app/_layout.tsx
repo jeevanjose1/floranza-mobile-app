@@ -281,7 +281,7 @@ export default function RootLayout() {
           </ThemeProvider>
         </SafeAreaProvider>
         </GtokenProvider>
-       <Toast config={toastConfig} position='bottom' />
+       <Toast config={toastConfig} position='top' />
       </QueryProvider>
     </ErrorBoundary>
   );

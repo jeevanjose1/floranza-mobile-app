@@ -5,6 +5,7 @@ import React, { useState } from 'react'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   Text,
@@ -165,8 +166,7 @@ const Tracking = () => {
                     <View className="mt-2 pt-3 border-t border-gray-200">
                       <TouchableOpacity
                         onPress={() => {
-                          // Use Linking.openURL(data.data.track_url) in real implementation
-                          console.log('Open URL:', data.data.track_url)
+                          Linking.openURL(data.data.track_url)
                         }}
                         className="bg-primary px-4 py-3 rounded-lg flex-row items-center justify-center"
                       >
