@@ -4,7 +4,7 @@ import useBreakPoints from "@/hooks/useBreajpoints";
 import { calculate_discount, calculate_product_price } from "@/lib/utils";
 import { useGetLatestProducts } from "@/services/queries/home";
 import { FlashList } from "@shopify/flash-list";
-import React from "react";
+import React, { useMemo } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
 
 const LatestProducts = () => {
@@ -13,27 +13,25 @@ const LatestProducts = () => {
     data: latest_products,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage
+    isFetchingNextPage,
   } = useGetLatestProducts();
 
-  const flat_product = latest_products ? latest_products?.pages?.map((item: any) => item?.data?.list)?.flat() : [];
-
-  const filterd_data =
-    flat_product?.map((item: any) => {
-      return {
+  const filterd_data = useMemo(() => {
+    const flat_product = latest_products
+      ? latest_products?.pages?.map((item: any) => item?.data?.list)?.flat()
+      : [];
+    return (
+      flat_product?.map((item: any) => ({
         id: item?.id,
         title: item?.name,
         price: calculate_product_price(item),
-
         image: item?.images?.large,
-
         slug: item?.slug,
         is_pre_order: item?.is_pre_order,
-        is_new_product: item?.is_new_product
-      };
-    }) || [];
-
-
+        is_new_product: item?.is_new_product,
+      })) || []
+    );
+  }, [latest_products]);
 
   return (
     <View className="px-4 w-full mb-8">
@@ -47,6 +45,8 @@ const LatestProducts = () => {
       <FlashList
         data={filterd_data}
         numColumns={isWidth ? 2 : 3}
+        // @ts-ignore
+        estimatedItemSize={250}
         refreshing={isFetchingNextPage}
         renderItem={({ item }) => (
           <View className="flex-1 p-1">
@@ -54,8 +54,15 @@ const LatestProducts = () => {
               name={item.title}
               // category={item.category}
               price={item.price.min as any}
-              oldPrice={item.price.max !== 0 && String(item.price.max) as any}
-              discount={item.price.max ? calculate_discount(item.price.min, item.price.max) as number : 0}
+              oldPrice={item.price.max !== 0 && (String(item.price.max) as any)}
+              discount={
+                item.price.max
+                  ? (calculate_discount(
+                      item.price.min,
+                      item.price.max,
+                    ) as number)
+                  : 0
+              }
               image={item.image}
               slug={item.slug}
             />
@@ -66,11 +73,23 @@ const LatestProducts = () => {
           paddingBottom: 20,
         }}
       />
-      {hasNextPage && <View className="items-center">
-        <Button disabled={isFetchingNextPage} onPress={() => fetchNextPage()} size='small' variant='primary' className='max-w-28' >{isFetchingNextPage ? <ActivityIndicator /> : <Text className=' font-sam-bold'>Show more</Text>}</Button>
-
-      </View>}
-
+      {hasNextPage && (
+        <View className="items-center">
+          <Button
+            disabled={isFetchingNextPage}
+            onPress={() => fetchNextPage()}
+            size="small"
+            variant="primary"
+            className="max-w-28"
+          >
+            {isFetchingNextPage ? (
+              <ActivityIndicator />
+            ) : (
+              <Text className=" font-sam-bold">Show more</Text>
+            )}
+          </Button>
+        </View>
+      )}
     </View>
   );
 };

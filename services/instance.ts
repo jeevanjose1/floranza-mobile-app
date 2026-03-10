@@ -1,13 +1,14 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
-import { Alert } from 'react-native';
+import { router } from "expo-router";
+import { Alert } from "react-native";
 
 export const base_url = process.env.EXPO_PUBLIC_BASE_URL;
 const instance = axios.create({
   baseURL: base_url,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    "Content-Type": "application/json",
+  },
 });
 
 instance.interceptors.request.use(
@@ -18,11 +19,11 @@ instance.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
     } catch (error) {
-      console.error('Error reading token from AsyncStorage:', error);
+      console.error("Error reading token from AsyncStorage:", error);
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 instance.interceptors.response.use(
@@ -32,30 +33,24 @@ instance.interceptors.response.use(
       await handleLogout();
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 async function handleLogout() {
   try {
     // Remove specific token
     await AsyncStorage.removeItem("floranza-t-value");
-    
+
     // Clear all AsyncStorage (equivalent to localStorage.clear())
     await AsyncStorage.clear();
-    
+
     // Show alert instead of toast
-    Alert.alert(
-      "Session Expired",
-      "Please login again.",
-      [{ text: "OK" }]
-    );
-    
+    Alert.alert("Session Expired", "Please login again.", [{ text: "OK" }]);
+
     // Navigate to login screen
-    // Note: You'll need to import your navigation reference
-    // Example: navigationRef.current?.reset({ index: 0, routes: [{ name: 'Login' }] });
-    
+    router.replace("/login");
   } catch (error) {
-    console.error('Error during logout:', error);
+    console.error("Error during logout:", error);
   }
 }
 

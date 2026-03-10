@@ -21,7 +21,26 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.jeevanjose1997.floranzamobileapp"
+      "package": "com.jeevanjose1997.floranzamobileapp",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "floranzafashion.com",
+              "pathPrefix": "/product/"
+            },
+            {
+              "scheme": "https",
+              "host": "www.floranzafashion.com",
+              "pathPrefix": "/product/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "output": "static",

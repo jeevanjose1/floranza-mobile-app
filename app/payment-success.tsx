@@ -1,29 +1,29 @@
-import Header from '@/components/layout/header'
-import { useGetPaymentDetails } from '@/services/queries/payment'
-import { Feather } from '@expo/vector-icons'
-import * as Clipboard from 'expo-clipboard'
-import { useLocalSearchParams, useRouter } from 'expo-router'
-import React from 'react'
+import Header from "@/components/layout/header";
+import { useGetPaymentDetails } from "@/services/queries/payment";
+import { Feather } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React from "react";
 import {
-    ActivityIndicator,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+  ActivityIndicator,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 // --- Utility Components ---
 
 const CopyToClipboardButton = ({ text }: { text: string }) => {
-  const [copied, setCopied] = React.useState(false)
+  const [copied, setCopied] = React.useState(false);
 
   const copyToClipboard = async () => {
-    if (!text) return
-    await Clipboard.setStringAsync(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    if (!text) return;
+    await Clipboard.setStringAsync(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <TouchableOpacity onPress={copyToClipboard} className="p-1">
@@ -33,17 +33,17 @@ const CopyToClipboardButton = ({ text }: { text: string }) => {
         <Feather name="copy" color="#6B7280" size={16} />
       )}
     </TouchableOpacity>
-  )
-}
+  );
+};
 
 const InfoCard = ({
   title,
   iconName,
   children,
 }: {
-  title: string
-  iconName: React.ComponentProps<typeof Feather>['name']
-  children: React.ReactNode
+  title: string;
+  iconName: React.ComponentProps<typeof Feather>["name"];
+  children: React.ReactNode;
 }) => (
   <View className="bg-white rounded-lg border border-gray-200 mb-4 overflow-hidden">
     <View className="flex-row items-center gap-2 bg-gray-50 px-4 py-3 border-b border-gray-200">
@@ -52,16 +52,16 @@ const InfoCard = ({
     </View>
     <View className="p-4">{children}</View>
   </View>
-)
+);
 
 const InfoRow = ({
   label,
   value,
   children,
 }: {
-  label: string
-  value?: string
-  children?: React.ReactNode
+  label: string;
+  value?: string;
+  children?: React.ReactNode;
 }) => (
   <View className="flex-row justify-between items-start mb-3">
     <Text className="text-sm text-gray-600">{label}</Text>
@@ -72,7 +72,7 @@ const InfoRow = ({
     )}
     {children && <View className="flex-shrink items-end">{children}</View>}
   </View>
-)
+);
 
 const OrderItemCard = ({ item }: { item: any }) => (
   <View className="p-4 bg-gray-50 rounded-lg mb-3">
@@ -88,19 +88,21 @@ const OrderItemCard = ({ item }: { item: any }) => (
       </View>
     </View>
   </View>
-)
+);
 
 // --- Main Component ---
 
 const PaymentSuccess = () => {
-  const params = useLocalSearchParams()
-  const router = useRouter()
-  const { data: details, isLoading, error } = useGetPaymentDetails(
-    params.order_id as string
-  )
+  const params = useLocalSearchParams();
+  const router = useRouter();
+  const {
+    data: details,
+    isLoading,
+    error,
+  } = useGetPaymentDetails(params.order_id as string);
 
   const orderData = React.useMemo(() => {
-    if (!details?.data) return null
+    if (!details?.data) return null;
 
     return {
       orderNumber: details.data.order_no,
@@ -133,25 +135,25 @@ const PaymentSuccess = () => {
         ? Number(details.data.price) - Number(details.data.promo_discount)
         : details.data.price,
       paymentMethod: details.data.payment_gateway,
-    }
-  }, [details])
+    };
+  }, [details]);
 
   // --- Loading State ---
   if (isLoading) {
     return (
-      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
         <Header type="cart" title="Order Completed" />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#3B82F6" />
         </View>
       </SafeAreaView>
-    )
+    );
   }
 
   // --- Error State ---
   if (error || !orderData) {
     return (
-      <SafeAreaView className="flex-1 bg-white" edges={['top']}>
+      <SafeAreaView className="flex-1 bg-white" edges={["top"]}>
         <Header type="cart" title="Order Completed" />
         <View className="flex-1 items-center justify-center p-6">
           <Feather name="alert-circle" color="#EF4444" size={48} />
@@ -163,12 +165,12 @@ const PaymentSuccess = () => {
           </Text>
         </View>
       </SafeAreaView>
-    )
+    );
   }
 
   // --- Success Content ---
   return (
-    <SafeAreaView className="flex-1 bg-gray-50" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-gray-50" edges={["top"]}>
       <Header type="cart" title="Order Completed" />
       <ScrollView className="flex-1">
         <View className="p-4">
@@ -212,7 +214,10 @@ const PaymentSuccess = () => {
             <InfoRow label="Email:" value={orderData.email} />
             <InfoRow label="Courier:" value={orderData.courier} />
             {orderData.is_preorder && (
-              <InfoRow label="Pre-order Date:" value={orderData.preorder_data} />
+              <InfoRow
+                label="Pre-order Date:"
+                value={orderData.preorder_data}
+              />
             )}
           </InfoCard>
 
@@ -231,8 +236,8 @@ const PaymentSuccess = () => {
                 </Text>
               )}
               <Text className="text-gray-900">
-                {orderData.shippingAddress.city},{' '}
-                {orderData.shippingAddress.state}{' '}
+                {orderData.shippingAddress.city},{" "}
+                {orderData.shippingAddress.state}{" "}
                 {orderData.shippingAddress.zipCode}
               </Text>
               <Text className="text-gray-900">
@@ -257,7 +262,7 @@ const PaymentSuccess = () => {
               label="Shipping:"
               value={
                 orderData.shipping === 0
-                  ? 'Free'
+                  ? "Free"
                   : `₹${orderData.shipping.toLocaleString()}`
               }
             />
@@ -278,7 +283,7 @@ const PaymentSuccess = () => {
               <Text className="text-lg font-semibold text-gray-900">
                 Total Paid:
               </Text>
-              <Text className="text-lg font-semibold text-blue-600">
+              <Text className="text-lg font-semibold text-primary">
                 ₹{(orderData.total < 0 ? 0 : orderData.total).toLocaleString()}
               </Text>
             </View>
@@ -292,8 +297,8 @@ const PaymentSuccess = () => {
           {/* Action Buttons */}
           <View className="space-y-3 mt-4 mb-6">
             <TouchableOpacity
-              className="bg-blue-600 px-6 py-4 rounded-lg"
-              onPress={() => router.replace('/')}
+              className="bg-primary px-6 py-4 rounded-lg"
+              onPress={() => router.replace("/")}
             >
               <Text className="text-white font-semibold text-center text-base">
                 Continue Shopping
@@ -302,7 +307,7 @@ const PaymentSuccess = () => {
 
             <TouchableOpacity
               className="bg-white border border-gray-300 px-6 py-4 rounded-lg"
-              onPress={() => router.replace('/my-orders')}
+              onPress={() => router.replace("/my-orders")}
             >
               <Text className="text-gray-700 font-semibold text-center text-base">
                 View My Orders
@@ -312,7 +317,7 @@ const PaymentSuccess = () => {
         </View>
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
-export default PaymentSuccess
+export default PaymentSuccess;

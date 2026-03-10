@@ -6,16 +6,13 @@ import {
   useCheckoutCart,
   useViewCart,
 } from "@/services/queries/cart";
-import {
-  usePhonePeStatus,
-  useRazorpayStatus,
-} from "@/services/queries/payment";
+import { useRazorpayStatus } from "@/services/queries/payment";
 import { indianStates } from "@/shared/others/others";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -27,7 +24,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import PhonePePaymentSDK from "react-native-phonepe-pg";
 import RazorpayCheckout from "react-native-razorpay";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -62,7 +58,7 @@ type CartItem = {
   };
 };
 
-type PaymentMethod = "PHONEPE" | "RAZORPAY";
+type PaymentMethod = "RAZORPAY";
 
 type DeliveryPreferences = {
   courier: string;
@@ -93,6 +89,17 @@ const getStateName = (stateCode: string) => {
 
 const getShippingLabel = (option: string) => {
   return option === "dtdc" ? "DTDC" : "India Post";
+};
+
+// Sanitize phone number to 10-digit Indian mobile number
+const sanitizeContact = (contact: string | undefined | null): string => {
+  if (!contact) return "";
+  const digits = contact.replace(/\D/g, "");
+  // Remove country code if present (e.g. 91XXXXXXXXXX)
+  if (digits.length === 12 && digits.startsWith("91")) {
+    return digits.slice(2);
+  }
+  return digits.slice(-10);
 };
 
 // --- REUSABLE CHILD COMPONENTS ---
@@ -139,37 +146,67 @@ const OrderSummary = React.memo(({ items }: { items: CartItem[] }) => (
 // Coupon Manager
 interface CouponManagerProps {
   token: string;
+  subtotal: number;
   onCouponChange: (discount: number) => void;
+  appliedCoupon: any | null;
+  setAppliedCoupon: (coupon: any | null) => void;
 }
 
-const CouponManager = ({ token, onCouponChange }: CouponManagerProps) => {
+const CouponManager = ({
+  token,
+  subtotal,
+  onCouponChange,
+  appliedCoupon,
+  setAppliedCoupon,
+}: CouponManagerProps) => {
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
-  const { mutateAsync: applyCoupon, isPending: isApplyingCoupon } =
-    useApplyCoupon();
+  const { mutate: apply, isPending: isApplyingCoupon } = useApplyCoupon();
 
-  const handleApplyCoupon = async () => {
+  const handleApplyCoupon = () => {
     if (!couponCode.trim()) return;
-    try {
-      const response = await applyCoupon({
+    apply(
+      {
         coupon_code: couponCode.trim(),
         data: { token },
-      });
-      if (response?.data) {
-        const discount = Number(response.data.discount || 0);
-        setAppliedCoupon(couponCode.trim());
-        onCouponChange(discount);
-      }
-    } catch (error) {
-      console.error("Failed to apply coupon:", error);
-    }
+      },
+      {
+        onSuccess: (response: any) => {
+          if (response?.data) {
+            const order_min_amount = Number(
+              response.data.order_min_amount || 0,
+            );
+            const is_coupon_valid = subtotal >= order_min_amount;
+            if (is_coupon_valid) {
+              const discount = Number(response.data.discount || 0);
+              setAppliedCoupon(response.data);
+              onCouponChange(discount);
+              Toast.show({
+                type: "success",
+                text1: "Coupon applied",
+              });
+            } else {
+              Toast.show({
+                type: "error",
+                text1: `Minimum order amount should be ${order_min_amount} to use this coupon.`,
+              });
+            }
+          }
+        },
+        onError: (error: any) => {
+          Toast.show({
+            type: "error",
+            text1: error?.data?.message || "Failed to apply coupon",
+          });
+        },
+      },
+    );
   };
 
   const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
     setCouponCode("");
     onCouponChange(0);
+    setAppliedCoupon(null);
   };
 
   if (appliedCoupon) {
@@ -178,7 +215,10 @@ const CouponManager = ({ token, onCouponChange }: CouponManagerProps) => {
         <View className="flex-1">
           <Text className="text-sm text-gray-600">Coupon Applied</Text>
           <Text className="text-base font-semibold text-green-700">
-            {appliedCoupon}
+            {appliedCoupon?.coupon_code}{" "}
+            {appliedCoupon?.discount_type === "flat" && "₹"}
+            {appliedCoupon?.coupon_value}
+            {appliedCoupon?.discount_type === "percent" && "%"} off
           </Text>
         </View>
         <TouchableOpacity onPress={handleRemoveCoupon}>
@@ -217,6 +257,8 @@ interface PriceDetailsProps {
   couponDiscount: number;
   total: number;
   token: string;
+  appliedCoupon: any | null;
+  setAppliedCoupon: (coupon: any | null) => void;
   onCouponChange: (discount: number) => void;
 }
 
@@ -227,6 +269,8 @@ const PriceDetails = ({
   total,
   token,
   onCouponChange,
+  appliedCoupon,
+  setAppliedCoupon,
 }: PriceDetailsProps) => (
   <View className="bg-white rounded-lg p-6 shadow-sm mb-4">
     <Text className="text-xl font-bold mb-4">Price Details</Text>
@@ -249,7 +293,13 @@ const PriceDetails = ({
       )}
 
       <View className="mb-3 pt-3 border-t border-gray-200">
-        <CouponManager token={token} onCouponChange={onCouponChange} />
+        <CouponManager
+          token={token}
+          subtotal={subtotal}
+          onCouponChange={onCouponChange}
+          appliedCoupon={appliedCoupon}
+          setAppliedCoupon={setAppliedCoupon}
+        />
       </View>
 
       <View className="border-t border-gray-200 pt-3 flex-row justify-between">
@@ -313,7 +363,7 @@ const AddressManager = ({
         const isDuplicate = combinedAddresses.some(
           (addr) =>
             addr.streetAddress === localAddress.streetAddress &&
-            addr.postcode === localAddress.postcode
+            addr.postcode === localAddress.postcode,
         );
 
         if (!isDuplicate) {
@@ -333,7 +383,7 @@ const AddressManager = ({
   useFocusEffect(
     useCallback(() => {
       getLocalAddress();
-    }, [addressData])
+    }, [addressData]),
   );
 
   const handleGoToAddAddress = () => {
@@ -503,19 +553,9 @@ const PaymentSelector = ({
     <Text className="text-xl font-bold mb-4">Payment Method</Text>
     <View>
       <PaymentOption
-        method="PHONEPE"
-        label="PhonePe"
-        description="Pay using PhonePe"
-        icon="phone-portrait"
-        iconColor="#FF6B35"
-        bgColor="bg-orange-100"
-        isSelected={selectedMethod === "PHONEPE"}
-        onPress={() => onSelectMethod("PHONEPE")}
-      />
-      <PaymentOption
         method="RAZORPAY"
         label="Razorpay"
-        description="Pay using Razorpay"
+        description="Pay using UPI, Card, Net Banking & more"
         icon="card"
         iconColor="#6366F1"
         bgColor="bg-indigo-100"
@@ -570,12 +610,14 @@ interface PlaceOrderFooterProps {
   total: number;
   onPress: () => void;
   disabled: boolean;
+  loading: boolean;
 }
 
 const PlaceOrderFooter = ({
   total,
   onPress,
   disabled,
+  loading,
 }: PlaceOrderFooterProps) => (
   <View className="h-24 px-4 pt-4 bg-white border-t border-gray-200">
     <TouchableOpacity
@@ -583,9 +625,13 @@ const PlaceOrderFooter = ({
       disabled={disabled}
       className={`rounded-lg py-3 items-center ${disabled ? "bg-gray-400" : "bg-primary"}`}
     >
-      <Text className="text-white text-lg font-bold">
-        Place Order - ₹{total.toFixed(2)}
-      </Text>
+      {loading ? (
+        <ActivityIndicator color="white" />
+      ) : (
+        <Text className="text-white text-lg font-bold">
+          Place Order - ₹{total.toFixed(2)}
+        </Text>
+      )}
     </TouchableOpacity>
   </View>
 );
@@ -597,26 +643,20 @@ const Checkout = () => {
   const token = gToken;
   const router = useRouter();
 
-  // Initialize PhonePe SDK
-  useEffect(() => {
-    PhonePePaymentSDK.init("SANDBOX", "", "", true)
-      .then(() => console.log("✅ PhonePe SDK initialized"))
-      .catch((err) => console.error("❌ PhonePe init error:", err));
-  }, []);
-
   const [state] = useState<string>(() => getInitialState(cData));
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethod | null>(null);
   const [couponDiscount, setCouponDiscount] = useState(0);
-  const { mutateAsync: checkout } = useCheckoutCart();
+  const { mutateAsync: checkout, isPending: checkoutPending } =
+    useCheckoutCart();
   const { mutateAsync: get_status } = useRazorpayStatus();
-  const { mutateAsync: get_status_phone_pe } = usePhonePeStatus();
   const [deliveryPreferences, setDeliveryPreferences] =
     useState<DeliveryPreferences>({
       courier: "",
       instructions: "",
     });
+  const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
 
   const [deliveryErrors, setDeliveryErrors] = useState<DeliveryErrors>({});
   const [deliveryTouched, setDeliveryTouched] = useState({
@@ -630,7 +670,10 @@ const Checkout = () => {
     error,
   } = useViewCart({
     token: token,
-    filter: { state: selectedAddress?.state || state },
+    filter: {
+      state: selectedAddress?.state || state,
+      ...(appliedCoupon && { coupon_code: appliedCoupon.coupon_code }),
+    },
   });
 
   const cart = cart_items?.data;
@@ -660,6 +703,12 @@ const Checkout = () => {
     // convert to paise (smallest unit) and round to integer
     const amountPaise = Math.round(totalNumber * 100);
 
+    // Sanitize contact to a valid 10-digit Indian mobile number
+    // This is critical — Razorpay hides UPI if contact is empty or malformed
+    const rawContact =
+      razorpay_data?.prefill?.contact ?? razorpay_data?.contact ?? "";
+    const sanitizedContact = sanitizeContact(rawContact);
+
     const razopay_data = {
       description: razorpay_data?.description,
       currency: "INR",
@@ -667,12 +716,20 @@ const Checkout = () => {
       // Razorpay expects amount in paise (integer)
       amount: amountPaise,
       name: razorpay_data?.name,
-      order_id: razorpay_data?.order_id, // include if available
+      order_id: razorpay_data?.order_id,
       prefill: {
         email: razorpay_data?.prefill?.email ?? razorpay_data?.email ?? "",
-        contact:
-          razorpay_data?.prefill?.contact ?? razorpay_data?.contact ?? "",
+        // Use sanitized contact — required for UPI to appear
+        contact: sanitizedContact,
         name: razorpay_data?.prefill?.name ?? razorpay_data?.name ?? "",
+      },
+      // Explicitly enable all payment methods including UPI
+      method: {
+        upi: true,
+        card: true,
+        netbanking: true,
+        wallet: true,
+        emi: false,
       },
       theme: { color: "#F37254" },
     };
@@ -693,113 +750,16 @@ const Checkout = () => {
         });
       })
       .catch((error) => {
-        console.log(error, "error");
-      });
-  };
-
-  const handlePhonePeSubmit = async (response: any) => {
-    try {
-      const phonepe_data = response?.pg?.PHONEPE;
-      console.log("📦 PhonePe data:", JSON.stringify(phonepe_data, null, 2));
-
-      if (!phonepe_data) {
-        console.error("❌ PhonePe data not found in response");
-        Toast.show({
-          type: "error",
-          text1: "Payment Error",
-          text2: "PhonePe data not found",
-        });
-        return;
-      }
-
-      const merchantTransactionId =
-        phonepe_data?.merchantTransactionId || phonepe_data?.order_id;
-
-      // Priority 1: Check if backend provides SDK payload (body field)
-      if (phonepe_data?.body) {
-        console.log("🎯 Using PhonePe SDK");
-
-        Toast.show({
-          type: "info",
-          text1: "Initiating Payment",
-          text2: "Please wait...",
-        });
-
-        const result = await PhonePePaymentSDK.startTransaction(
-          phonepe_data.body,
-          null
-        );
-
-        console.log("📱 SDK result:", result);
-
-        if (result?.status === "SUCCESS") {
+        if (error.message)
           Toast.show({
-            type: "success",
-            text1: "Payment Successful!",
+            type: "error",
+            text1: "Payment Failed",
+            text2:
+              error?.description ||
+              error?.message ||
+              "There was an issue opening Razorpay",
           });
-
-          get_status_phone_pe(merchantTransactionId, {
-            onSuccess: (res) => {
-              router.replace({
-                pathname: `/payment-success`,
-                params: {
-                  order_id: res?.data?.order_id || merchantTransactionId,
-                },
-              });
-            },
-            onError: () => {
-              router.replace({
-                pathname: `/payment-success`,
-                params: { order_id: merchantTransactionId },
-              });
-            },
-          });
-        } else {
-          Toast.show({
-            type: "info",
-            text1:
-              result?.status === "FAILURE"
-                ? "Payment Failed"
-                : "Payment Cancelled",
-            text2: "You can try again",
-          });
-        }
-        return; // Exit after SDK flow
-      }
-
-      // Priority 2: Fallback to redirect URL
-      const redirectUrl = phonepe_data?.redirectInfo?.url;
-
-      if (!redirectUrl) {
-        console.error("❌ PhonePe redirect URL not found");
-        Toast.show({
-          type: "error",
-          text1: "Payment Error",
-          text2: "Payment URL not available",
-        });
-        return;
-      }
-
-      console.log("🚀 Opening PhonePe payment page...");
-
-      // Open in system browser to allow GooglePay/PhonePe/Paytm app links to work
-      const { Linking } = require("react-native");
-      await Linking.openURL(redirectUrl);
-
-      Toast.show({
-        type: "info",
-        text1: "Payment Page Opened",
-        text2: "Complete payment and return to app",
-        visibilityTime: 5000,
       });
-    } catch (error) {
-      console.error("❌ PhonePe payment error:", error);
-      Toast.show({
-        type: "error",
-        text1: "Payment Error",
-        text2: "Failed to open payment page",
-      });
-    }
   };
 
   const handlePlaceOrder = () => {
@@ -813,6 +773,7 @@ const Checkout = () => {
     if (!selectedAddress) return;
     if (!selectedPaymentMethod) return;
     if (!isDeliveryValid) return;
+
     const dataObject = {
       fname: selectedAddress?.fullName,
       country: selectedAddress?.country,
@@ -827,6 +788,7 @@ const Checkout = () => {
       order_via: "MOBILE",
       pg: cart_items?.data?.total === 0 ? "WALLET" : selectedPaymentMethod,
       ...(couponDiscount && { coupon_code: String(couponDiscount) }),
+      ...(appliedCoupon && { coupon_code: appliedCoupon.coupon_code }),
     };
 
     checkout(
@@ -839,25 +801,22 @@ const Checkout = () => {
           const payment_type = response?.data?.pg
             ? Object.keys(response?.data?.pg)?.[0]
             : false;
-          console.log(payment_type, "payment_type");
 
           if (payment_type === "RAZORPAY") {
             handleRazorpaySubmit(response?.data);
-          } else if (payment_type === "PHONEPE") {
-            handlePhonePeSubmit(response?.data);
           } else {
             router.replace(
-              `/payment-success?order_id=${response?.data?.order_id}`
+              `/payment-success?order_id=${response?.data?.order_id}`,
             );
           }
         },
         onError: (error: any) => {
           Toast.show({
             type: "error",
-            text1: error?.data?.message,
+            text1: error?.data?.message && error?.data?.message,
           });
         },
-      }
+      },
     );
   };
 
@@ -988,6 +947,8 @@ const Checkout = () => {
               total={total}
               token={token as string}
               onCouponChange={setCouponDiscount}
+              appliedCoupon={appliedCoupon}
+              setAppliedCoupon={setAppliedCoupon}
             />
           </View>
         </ScrollView>
@@ -996,6 +957,7 @@ const Checkout = () => {
           total={total}
           onPress={handlePlaceOrder}
           disabled={isPlaceOrderDisabled}
+          loading={checkoutPending}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
