@@ -28,10 +28,11 @@ const ProductCard = ({
     router.push({
       pathname: '/product-details',
       params: { slug }
-    }
-    )
-    onPress
-  }
+    });
+
+    // Call the prop function if it exists
+    if (onPress) onPress();
+  };
 
   return (
     <TouchableOpacity
@@ -73,12 +74,12 @@ const ProductCard = ({
 
         <View className="flex-row items-center">
           <Text className="font-sam-bold text-primary text-[13px] mr-2">
-            ₹{price}
+            ₹{price.toLocaleString('en-IN')}
           </Text>
 
           {oldPrice && (
             <Text className="font-sam-medium text-gray-400 text-[11px] line-through mr-1">
-              ₹{oldPrice}
+              ₹{oldPrice.toLocaleString('en-IN')}
             </Text>
           )}
         </View>

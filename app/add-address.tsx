@@ -138,26 +138,38 @@ export const FormPicker: React.FC<FormPickerProps> = ({
             <View className={`${bgColor} px-1 rounded-lg shadow-sm ${hasError ? 'border border-red-400' : 'border border-gray-200'
                 }`}>
                 <Picker
-                    selectedValue={selectedValue}
-                    onValueChange={onValueChange}
-                    style={{
-                        height: 50,
-
-                        color: selectedValue ? '#111827' : PLACEHOLDER_TEXT_COLOR,
-                        fontSize: 10
-                    }}
-                    {...rest}
-                >
-                    {prompt && <Picker.Item label={prompt} value="" color={PLACEHOLDER_TEXT_COLOR} />}
-                    {items.map((item) => (
-                        <Picker.Item
-                            key={item.value}
-                            label={item.label}
-                            value={item.value}
-                            color="#111827"
-                        />
-                    ))}
-                </Picker>
+    selectedValue={selectedValue}
+    onValueChange={onValueChange}
+    // Forces the dropdown arrow to stay visible on white backgrounds
+    dropdownIconColor="#111827" 
+    style={{
+        height: 50,
+        backgroundColor: 'transparent', // Let the parent View handle the color
+        color: selectedValue ? '#111827' : PLACEHOLDER_TEXT_COLOR,
+        fontSize: 10,
+    }}
+    // This is specific to iOS to control the picker item colors
+    itemStyle={{ backgroundColor: 'white', color: '#111827', fontSize: 16 }}
+    {...rest}
+>
+    {prompt && (
+        <Picker.Item 
+            label={prompt} 
+            value="" 
+            color={PLACEHOLDER_TEXT_COLOR} 
+            style={{ backgroundColor: 'white' }} // Explicit background for the item
+        />
+    )}
+    {items.map((item) => (
+        <Picker.Item
+            key={item.value}
+            label={item.label}
+            value={item.value}
+            color="#111827"
+            style={{ backgroundColor: 'white' }} // Force item background to white
+        />
+    ))}
+</Picker>
             </View>
             {hasError && (
                 <Text className="text-red-500 text-xs mt-1.5 ml-1 font-sam-regular">

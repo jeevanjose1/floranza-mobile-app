@@ -148,10 +148,12 @@ const CartItems = ({ item }: CartItemsProps) => {
                                 Size: {item.attributeOption}
                             </Text>
                         )}
-                        <Text className="text-lg font-bold text-primary">
-                            ₹{item.price.toFixed(2)}
-                        </Text>
-                        
+                       <Text className="text-lg font-bold text-primary">
+  ₹{item.price.toLocaleString('en-IN', { 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2 
+  })}
+</Text>
                         {/* Stock status indicator */}
                         {!item?.is_unlimited_qty && !isOutOfStock && item?.mainQty <= 10 && (
                             <Text className="text-orange-500 text-xs mt-1">

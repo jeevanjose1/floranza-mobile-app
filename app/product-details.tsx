@@ -344,17 +344,19 @@ const ProductDetails = (props: Props) => {
 
           <View className="flex-row px-4 items-center mb-4">
             <Text className="font-sam-bold text-primary text-2xl mr-4">
-              {`₹${String(price.min)}`}
+              ₹{price.min.toLocaleString('en-IN')}
             </Text>
+
             {price.max ? (
               <Text className="font-sam-medium text-gray-400 text-[14px] line-through mr-2">
-                {`₹${String(price.max)}`}
+                ₹{price.max.toLocaleString('en-IN')}
               </Text>
             ) : null}
+
             {discount ? (
               <View className="bg-green-100 px-2 py-1 rounded">
                 <Text className="font-sam-medium text-green-700 text-xs">
-                  {String(discount)}% OFF
+                  {discount}% OFF
                 </Text>
               </View>
             ) : null}
@@ -373,11 +375,10 @@ const ProductDetails = (props: Props) => {
                     <TouchableOpacity
                       onPress={() => handleHandleSelectVariation(size, index)}
                       disabled={!size.qty && Boolean(!size?.is_unlimited_qty)}
-                      className={`rounded-lg border min-w-min relative z-10 items-center ${
-                        selectedSize === size
+                      className={`rounded-lg border min-w-min relative z-10 items-center ${selectedSize === size
                           ? "border-primary bg-primary/5"
                           : "border-gray-300 bg-white"
-                      }`}
+                        }`}
                     >
                       <View className="relative">
                         {!size.qty && Boolean(!size?.is_unlimited_qty) && (
@@ -393,11 +394,10 @@ const ProductDetails = (props: Props) => {
                           </View>
                         )}
                         <Text
-                          className={`font-sam-medium px-5 py-2 ${
-                            selectedSize === size
+                          className={`font-sam-medium px-5 py-2 ${selectedSize === size
                               ? "text-primary"
                               : "text-gray-700"
-                          } ${!size.qty && Boolean(!size?.is_unlimited_qty) ? "opacity-50" : ""}`}
+                            } ${!size.qty && Boolean(!size?.is_unlimited_qty) ? "opacity-50" : ""}`}
                         >
                           {size.attribute_option_name}
                           {size?.option_title && (

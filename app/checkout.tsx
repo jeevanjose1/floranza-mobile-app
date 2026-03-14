@@ -133,7 +133,10 @@ const OrderSummary = React.memo(({ items }: { items: CartItem[] }) => (
                 Qty: {item.cart_qty}
               </Text>
               <Text className="text-base font-bold text-primary">
-                ₹{(item.price * item.cart_qty).toFixed(2)}
+                ₹{(item.price * item.cart_qty).toLocaleString('en-IN', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </Text>
             </View>
           </View>
@@ -277,7 +280,12 @@ const PriceDetails = ({
     <View className="border-t border-gray-200 pt-4">
       <View className="flex-row justify-between mb-3">
         <Text className="text-gray-600">Subtotal</Text>
-        <Text className="font-semibold">₹{subtotal.toFixed(2)}</Text>
+        <Text className="font-semibold">
+          ₹{subtotal.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}
+        </Text>
       </View>
       <View className="flex-row justify-between mb-3">
         <Text className="text-gray-600">Shipping</Text>
@@ -305,7 +313,10 @@ const PriceDetails = ({
       <View className="border-t border-gray-200 pt-3 flex-row justify-between">
         <Text className="text-lg font-bold">Total</Text>
         <Text className="text-lg font-bold text-primary">
-          ₹{total.toFixed(2)}
+          ₹{total.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}
         </Text>
       </View>
     </View>
@@ -453,9 +464,8 @@ const AddressCard = ({
   return (
     <TouchableOpacity
       onPress={onPress}
-      className={`mr-3 p-4 rounded-lg border min-w-[280] ${
-        isSelected ? "border-primary bg-blue-50" : "border-gray-200 bg-white"
-      }`}
+      className={`mr-3 p-4 rounded-lg border min-w-[280] ${isSelected ? "border-primary bg-blue-50" : "border-gray-200 bg-white"
+        }`}
     >
       <View className="flex-row items-start justify-between mb-2">
         <Text className="font-bold text-base flex-1">{address.fullName}</Text>
@@ -586,9 +596,8 @@ const PaymentOption = ({
 }) => (
   <TouchableOpacity
     onPress={onPress}
-    className={`flex-row items-center p-4 rounded-lg border-2 mb-3 ${
-      isSelected ? "border-primary bg-blue-50" : "border-gray-200 bg-white"
-    }`}
+    className={`flex-row items-center p-4 rounded-lg border-2 mb-3 ${isSelected ? "border-primary bg-blue-50" : "border-gray-200 bg-white"
+      }`}
   >
     <View
       className={`w-12 h-12 ${bgColor} rounded-lg items-center justify-center mr-3`}
@@ -629,7 +638,10 @@ const PlaceOrderFooter = ({
         <ActivityIndicator color="white" />
       ) : (
         <Text className="text-white text-lg font-bold">
-          Place Order - ₹{total.toFixed(2)}
+          Place Order - ₹{total.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}
         </Text>
       )}
     </TouchableOpacity>

@@ -120,7 +120,7 @@ export default function Cart() {
   const renderEmptyCart = () => (
     <View className="flex-1 items-center justify-center bg-gray-50 px-8">
       <MaterialCommunityIcons name="cart-outline" size={80} color="#D1D5DB" />
-      <Text className="mt-6 text-sm font-semibold text-gray-800">
+      <Text className="mt-6 text-sm  font-semibold text-gray-800">
         Your Cart is Empty
       </Text>
       <Text className="mt-2 text-center text-gray-500 text-base">
@@ -158,16 +158,22 @@ export default function Cart() {
             <View className="mb-4">
               <View className="flex-row justify-between mb-3">
                 <Text className="text-gray-600">Subtotal</Text>
-                <Text className="font-semibold">₹{subtotal.toFixed(2)}</Text>
+                <Text className="font-semibold">
+                  ₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </Text>
               </View>
+
               <View className="flex-row justify-between mb-3">
                 <Text className="text-gray-600">Shipping</Text>
-                <Text className="font-semibold">₹{shipping.toFixed(2)}</Text>
+                <Text className="font-semibold">
+                  ₹{shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </Text>
               </View>
+
               <View className="border-t border-gray-200 pt-3 flex-row justify-between">
                 <Text className="text-lg font-bold">Total</Text>
                 <Text className="text-lg font-bold text-primary">
-                  ₹{total.toFixed(2)}
+                  ₹{total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Text>
               </View>
             </View>
@@ -195,9 +201,8 @@ export default function Cart() {
         <TouchableOpacity
           onPress={handlePlaceOrder}
           disabled={cartIsEmpty || isLoading}
-          className={`rounded-lg py-3 items-center ${
-            cartIsEmpty || isLoading ? "bg-gray-400" : "bg-primary"
-          }`}
+          className={`rounded-lg py-3 items-center ${cartIsEmpty || isLoading ? "bg-gray-400" : "bg-primary"
+            }`}
         >
           <Text className="text-white text-lg font-bold">Go To Checkout</Text>
         </TouchableOpacity>
@@ -239,7 +244,7 @@ export default function Cart() {
         >
           <Pressable
             className="bg-white p-6 rounded-lg w-full max-w-md"
-            onPress={() => {}}
+            onPress={() => { }}
           >
             <ChangeStateForm
               currentState={state}
