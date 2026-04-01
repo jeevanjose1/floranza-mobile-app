@@ -2,27 +2,26 @@
   "expo": {
     "name": "Floranza",
     "slug": "floranza",
-    "version": "1.0.2",
+    "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/logo-square.png",
     "scheme": "floranzamobileapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.floranza.floranzamobileapp"
+      "bundleIdentifier": "com.jeevanjose1997.floranzamobileapp"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/icon.png",
-        "backgroundImage": "./assets/images/icon.png",
-        "monochromeImage": "./assets/images/icon.png"
+        "foregroundImage": "./assets/images/logo-square.png",
+        "backgroundImage": "./assets/images/logo-square.png",
+        "monochromeImage": "./assets/images/logo-square.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 3,
-      "package": "com.floranza.floranzamobileapp",
+      "package": "com.jeevanjose1997.floranzamobileapp",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -39,13 +38,16 @@
               "pathPrefix": "/product/"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/icon.png",
+      "favicon": "./assets/images/logo-square.png",
       "bundler": "metro"
     },
     "plugins": [
@@ -53,7 +55,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/icon.png",
+          "image": "./assets/images/logo-square.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
