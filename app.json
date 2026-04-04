@@ -4,24 +4,25 @@
     "slug": "floranza",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo-square.png",
-    "scheme": "floranzamobileapp",
+    "icon": "./assets/images/icon.png",
+    "scheme": "floranzaapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jeevanjose1997.floranzamobileapp"
+      "bundleIdentifier": "com.floranza.floranzaapp"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/logo-square.png",
-        "backgroundImage": "./assets/images/logo-square.png",
-        "monochromeImage": "./assets/images/logo-square.png"
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundImage": "./assets/images/icon.png",
+        "monochromeImage": "./assets/images/icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.jeevanjose1997.floranzamobileapp",
+      "versionCode": 1,
+      "package": "com.floranza.floranzaapp",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -38,16 +39,13 @@
               "pathPrefix": "/product/"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ]
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/logo-square.png",
+      "favicon": "./assets/images/icon.png",
       "bundler": "metro"
     },
     "plugins": [
@@ -55,7 +53,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/logo-square.png",
+          "image": "./assets/images/icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -77,6 +75,6 @@
         "projectId": "9ef8e0b1-d0cb-4c08-b75a-f1b9689f4e37"
       }
     },
-    "owner": "jeevan166s-organization"
+    "owner": "floranza-organization"
   }
 }
