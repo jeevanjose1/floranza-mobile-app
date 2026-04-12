@@ -1,7 +1,6 @@
 // CRITICAL: Import gesture-handler FIRST before anything else
 import "react-native-gesture-handler";
 
-import AnimatedSplash from "@/components/common/animated-splash";
 import ErrorBoundary from "@/components/common/error-boundary";
 import GtokenProvider from "@/components/common/gtoken-provider";
 import NetworkWrapper from "@/components/common/network-wrapper";
@@ -12,11 +11,15 @@ import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import * as Linking from "expo-linking";
 import { Stack, useRouter } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+
+// Keep the native splash screen visible until we explicitly hide it
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -31,7 +34,6 @@ export default function RootLayout() {
 
   // Ensure fonts are loaded or proceed with error
   const isReady = fontsLoaded || fontError;
-  const [showSplash, setShowSplash] = useState(true);
   const router = useRouter();
 
   // --- Deep link handler ---
@@ -66,9 +68,12 @@ export default function RootLayout() {
     return () => subscription.remove();
   }, []);
 
-  const handleSplashComplete = useCallback(() => {
-    setShowSplash(false);
-  }, []);
+  // Hide the native splash screen once fonts are ready
+  const onLayoutRootView = useCallback(async () => {
+    if (isReady) {
+      await SplashScreen.hideAsync();
+    }
+  }, [isReady]);
 
   // Show nothing while fonts are loading (native splash is still visible)
   if (!isReady) {
@@ -87,7 +92,7 @@ export default function RootLayout() {
           <SafeAreaProvider>
             <NetworkWrapper>
               <ThemeProvider value={DefaultTheme}>
-                <View className="flex-1">
+                <View className="flex-1" onLayout={onLayoutRootView}>
                   <Stack
                     screenOptions={{
                       headerStyle: {
@@ -282,13 +287,6 @@ export default function RootLayout() {
                       name="register"
                     />
                   </Stack>
-
-                  {/* Animated Splash Screen Overlay */}
-                  {showSplash && (
-                    <AnimatedSplash
-                      onAnimationComplete={handleSplashComplete}
-                    />
-                  )}
 
                   <StatusBar
                     translucent
