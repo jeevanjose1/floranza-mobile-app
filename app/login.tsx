@@ -12,7 +12,6 @@ import {
   Image,
   ImageBackground,
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -99,10 +98,7 @@ export default function Login() {
         className="flex-1"
       >
         <SafeAreaView className="flex-1" edges={["top"]}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            className="flex-1"
-          >
+          <KeyboardAvoidingView behavior={"padding"} className="flex-1">
             <ScrollView
               className="flex-1"
               contentContainerStyle={{ flexGrow: 1 }}
@@ -237,11 +233,11 @@ export default function Login() {
                         </View>
 
                         {/* Forgot Password */}
-                        <TouchableOpacity className="self-end mb-6">
+                        {/* <TouchableOpacity className="self-end mb-6">
                           <Text className="font-sam-medium text-primary text-sm">
                             Forgot Password?
                           </Text>
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
 
                         {/* Login Button */}
                         <Button

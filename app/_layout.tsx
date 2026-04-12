@@ -1,6 +1,7 @@
 // CRITICAL: Import gesture-handler FIRST before anything else
 import "react-native-gesture-handler";
 
+import AnimatedSplash from "@/components/common/animated-splash";
 import ErrorBoundary from "@/components/common/error-boundary";
 import GtokenProvider from "@/components/common/gtoken-provider";
 import NetworkWrapper from "@/components/common/network-wrapper";
@@ -11,15 +12,11 @@ import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import * as Linking from "expo-linking";
 import { Stack, useRouter } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-
-// Keep the splash screen visible while we fetch resources
-SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -34,6 +31,7 @@ export default function RootLayout() {
 
   // Ensure fonts are loaded or proceed with error
   const isReady = fontsLoaded || fontError;
+  const [showSplash, setShowSplash] = useState(true);
   const router = useRouter();
 
   // --- Deep link handler ---
@@ -68,36 +66,13 @@ export default function RootLayout() {
     return () => subscription.remove();
   }, []);
 
-  useEffect(() => {
-    if (isReady) {
-      // Hide splash screen when fonts are loaded or if there's an error
-      // Use setTimeout to ensure UI is ready
-      const timer = setTimeout(() => {
-        SplashScreen.hideAsync().catch((err) => {
-          // Ignore errors if splash screen is already hidden
-          console.warn("Splash screen hide error:", err);
-        });
-      }, 100);
+  const handleSplashComplete = useCallback(() => {
+    setShowSplash(false);
+  }, []);
 
-      return () => clearTimeout(timer);
-    }
-  }, [isReady]);
-
-  // Show loading indicator while fonts are loading
+  // Show nothing while fonts are loading (native splash is still visible)
   if (!isReady) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "#ffffff",
-        }}
-      >
-        <ActivityIndicator size="large" color="#ED2353" />
-        <Text style={{ marginTop: 16, color: "#6B7280" }}>Loading...</Text>
-      </View>
-    );
+    return null;
   }
 
   // Log font error but continue (fallback to system fonts)
@@ -307,6 +282,13 @@ export default function RootLayout() {
                       name="register"
                     />
                   </Stack>
+
+                  {/* Animated Splash Screen Overlay */}
+                  {showSplash && (
+                    <AnimatedSplash
+                      onAnimationComplete={handleSplashComplete}
+                    />
+                  )}
 
                   <StatusBar
                     translucent
