@@ -21,18 +21,24 @@ instance.interceptors.request.use(
     } catch (error) {
       console.error("Error reading token from AsyncStorage:", error);
     }
+    
+    
 
     config.params = {
       ...config.params,
       source: "mobile",
     };
+    
     return config;
   },
   (error) => Promise.reject(error),
 );
 
 instance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    
+    return response
+  },
   async (error) => {
     if (error.response && error.response.status === 401) {
       await handleLogout();
