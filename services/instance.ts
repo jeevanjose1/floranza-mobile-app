@@ -21,6 +21,11 @@ instance.interceptors.request.use(
     } catch (error) {
       console.error("Error reading token from AsyncStorage:", error);
     }
+
+    config.params = {
+      ...config.params,
+      source: "mobile",
+    };
     return config;
   },
   (error) => Promise.reject(error),
@@ -38,16 +43,12 @@ instance.interceptors.response.use(
 
 async function handleLogout() {
   try {
-    // Remove specific token
     await AsyncStorage.removeItem("floranza-t-value");
 
-    // Clear all AsyncStorage (equivalent to localStorage.clear())
     await AsyncStorage.clear();
 
-    // Show alert instead of toast
     Alert.alert("Session Expired", "Please login again.", [{ text: "OK" }]);
 
-    // Navigate to login screen
     router.replace("/login");
   } catch (error) {
     console.error("Error during logout:", error);
