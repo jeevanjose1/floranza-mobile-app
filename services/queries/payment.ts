@@ -30,4 +30,22 @@ const useGetPaymentDetails = (payload: string) => {
       }),
   });
 };
-export { useGetPaymentDetails, useRazorpayStatus };
+
+const usePhonePeStatus = () => {
+  return useMutation({
+    mutationFn: (payload: string) =>
+      fetcher({
+        url: `${PAYMENT.PHONEPE}/${payload}`,
+        type: "get",
+        data: payload,
+      }),
+    onSuccess: (response) => {
+      return response;
+    },
+    onError: (error: any) => {
+      return error;
+    },
+  });
+};
+
+export { useGetPaymentDetails, usePhonePeStatus, useRazorpayStatus };

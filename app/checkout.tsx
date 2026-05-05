@@ -6,7 +6,10 @@ import {
   useCheckoutCart,
   useViewCart,
 } from "@/services/queries/cart";
-import { useRazorpayStatus } from "@/services/queries/payment";
+import {
+  usePhonePeStatus,
+  useRazorpayStatus,
+} from "@/services/queries/payment";
 import { indianStates } from "@/shared/others/others";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -24,6 +27,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import PhonePePaymentSDK from "react-native-phonepe-pg";
 import RazorpayCheckout from "react-native-razorpay";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -58,7 +62,7 @@ type CartItem = {
   };
 };
 
-type PaymentMethod = "RAZORPAY";
+type PaymentMethod = "RAZORPAY" | "PHONEPE";
 
 type DeliveryPreferences = {
   courier: string;
@@ -68,6 +72,26 @@ type DeliveryPreferences = {
 type DeliveryErrors = {
   courier?: string;
   instructions?: string;
+};
+
+type PhonePeStatus = "SUCCESS" | "FAILURE" | "INTERRUPTED";
+
+type PhonePeCheckoutData = {
+  request?: string;
+  requestBody?: string;
+  token?: string;
+  merchantId?: string;
+  merchant_id?: string;
+  environment?: string;
+  env?: string;
+  flowId?: string;
+  flow_id?: string;
+  merchantOrderId?: string;
+  merchant_order_id?: string;
+  orderId?: string;
+  order_id?: string;
+  targetAppPackageName?: string;
+  target_app_package_name?: string;
 };
 
 // --- UTILITY FUNCTIONS ---
@@ -572,6 +596,16 @@ const PaymentSelector = ({
         isSelected={selectedMethod === "RAZORPAY"}
         onPress={() => onSelectMethod("RAZORPAY")}
       />
+      <PaymentOption
+        method="PHONEPE"
+        label="PhonePe"
+        description="Pay using PhonePe checkout on Android"
+        icon="phone-portrait"
+        iconColor="#16A34A"
+        bgColor="bg-green-100"
+        isSelected={selectedMethod === "PHONEPE"}
+        onPress={() => onSelectMethod("PHONEPE")}
+      />
     </View>
   </View>
 );
@@ -663,6 +697,7 @@ const Checkout = () => {
   const { mutateAsync: checkout, isPending: checkoutPending } =
     useCheckoutCart();
   const { mutateAsync: get_status } = useRazorpayStatus();
+  const { mutateAsync: getPhonePeStatus } = usePhonePeStatus();
   const [deliveryPreferences, setDeliveryPreferences] =
     useState<DeliveryPreferences>({
       courier: "",
@@ -774,6 +809,146 @@ const Checkout = () => {
       });
   };
 
+  const resolvePhonePeEnvironment = (environment?: string) => {
+    if (environment === "SANDBOX" || environment === "PRODUCTION") {
+      return environment;
+    }
+
+    return __DEV__ ? "SANDBOX" : "PRODUCTION";
+  };
+
+  const handlePhonePeResult = async (
+    merchantOrderId: string,
+    fallbackOrderId?: string,
+  ) => {
+    try {
+      const res = await getPhonePeStatus(merchantOrderId);
+      const status = res?.data?.state;
+      const orderId =
+        res?.data?.order_id || res?.data?.orderId || fallbackOrderId;
+
+      if (status === "COMPLETED" && orderId) {
+        router.replace({
+          pathname: `/payment-success`,
+          params: { order_id: orderId },
+        });
+        return;
+      }
+
+      Toast.show({
+        type: "error",
+        text1: "PhonePe payment not confirmed",
+        text2: "The payment status is not completed yet.",
+      });
+    } catch (error: any) {
+      Toast.show({
+        type: "error",
+        text1: "PhonePe verification failed",
+        text2:
+          error?.data?.message ||
+          "We could not confirm the payment status. Please try again.",
+      });
+      router.replace("/payment-faild");
+      return;
+    }
+
+    router.replace("/payment-faild");
+  };
+
+  const handlePhonePeSubmit = async (response: any) => {
+    const phonePeData: PhonePeCheckoutData = response?.pg?.PHONEPE || {};
+    const token = phonePeData?.token;
+    const merchantId = phonePeData?.merchantId || phonePeData?.merchant_id;
+    const orderId =
+      phonePeData?.orderId || phonePeData?.order_id || response?.phonepe_order_id;
+    const merchantOrderId =
+      phonePeData?.merchantOrderId ||
+      phonePeData?.merchant_order_id ||
+      response?.merchantOrderId ||
+      response?.merchant_order_id ||
+      response?.order_id;
+    const fallbackOrderId =
+      response?.order_id || phonePeData?.orderId || phonePeData?.order_id;
+    const requestBody =
+      phonePeData?.request ||
+      phonePeData?.requestBody ||
+      (token && merchantId && orderId
+        ? JSON.stringify({
+            orderId,
+            merchantId,
+            token,
+            paymentMode: {
+              type: "PAY_PAGE",
+            },
+            ...(phonePeData?.targetAppPackageName ||
+            phonePeData?.target_app_package_name
+              ? {
+                  targetAppPackageName:
+                    phonePeData?.targetAppPackageName ||
+                    phonePeData?.target_app_package_name,
+                }
+              : {}),
+          })
+        : null);
+
+    if (!merchantId || !merchantOrderId || !requestBody) {
+      Toast.show({
+        type: "error",
+        text1: "PhonePe setup incomplete",
+        text2:
+          "Missing PhonePe request data. Required: merchantId, orderId, token, and merchantOrderId.",
+      });
+      return;
+    }
+
+    const flowId = String(
+      phonePeData?.flowId ||
+        phonePeData?.flow_id ||
+        merchantOrderId ||
+        fallbackOrderId ||
+        Date.now(),
+    ).replace(/[^a-zA-Z0-9]/g, "");
+
+    try {
+      await PhonePePaymentSDK.init(
+        resolvePhonePeEnvironment(phonePeData?.environment || phonePeData?.env),
+        merchantId,
+        flowId,
+        __DEV__,
+      );
+
+      const sdkResponse = await PhonePePaymentSDK.startTransaction(
+        requestBody,
+        null,
+      );
+      const sdkStatus = sdkResponse?.status as PhonePeStatus | undefined;
+
+      if (sdkStatus === "SUCCESS" || sdkStatus === "INTERRUPTED") {
+        await handlePhonePeResult(merchantOrderId, fallbackOrderId);
+        return;
+      }
+
+      Toast.show({
+        type: "error",
+        text1: "PhonePe payment failed",
+        text2:
+          sdkResponse?.error ||
+          "The PhonePe transaction did not complete successfully.",
+      });
+      router.replace("/payment-faild");
+    } catch (error: any) {
+      Toast.show({
+        type: "error",
+        text1: "PhonePe payment failed",
+        text2:
+          error?.message ||
+          error?.data?.message ||
+          "Unable to start the PhonePe transaction.",
+      });
+      router.replace("/payment-faild");
+    }
+  };
+
   const handlePlaceOrder = () => {
     setDeliveryTouched({
       courier: true,
@@ -816,6 +991,8 @@ const Checkout = () => {
 
           if (payment_type === "RAZORPAY") {
             handleRazorpaySubmit(response?.data);
+          } else if (payment_type === "PHONEPE") {
+            handlePhonePeSubmit(response?.data);
           } else {
             router.replace(
               `/payment-success?order_id=${response?.data?.order_id}`,
