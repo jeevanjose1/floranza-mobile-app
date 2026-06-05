@@ -163,12 +163,12 @@ export default function Cart() {
                 </Text>
               </View>
 
-              <View className="flex-row justify-between mb-3">
+              {/* <View className="flex-row justify-between mb-3">
                 <Text className="text-gray-600">Shipping</Text>
                 <Text className="font-semibold">
                   ₹{shipping.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Text>
-              </View>
+              </View> */}
 
               <View className="border-t border-gray-200 pt-3 flex-row justify-between">
                 <Text className="text-lg font-bold">Total</Text>
