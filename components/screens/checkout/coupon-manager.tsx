@@ -87,8 +87,9 @@ const CouponManager = ({
         placeholder="Enter coupon code"
         placeholderTextColor="#9CA3AF"
         value={couponCode}
-        onChangeText={setCouponCode}
+        onChangeText={(text) => setCouponCode(text.toUpperCase())}
         onFocus={onInputFocus}
+        autoCapitalize="characters"
         returnKeyType="done"
       />
       <TouchableOpacity

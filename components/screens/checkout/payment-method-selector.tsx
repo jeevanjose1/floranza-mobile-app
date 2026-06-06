@@ -1,7 +1,9 @@
-import React from "react";
-import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Image, Text, TouchableOpacity, View } from "react-native";
 import { PaymentMethod } from "./types";
+
+const phonePeLogo = require("@/assets/images/phone-pay.png");
+const razorpayLogo = require("@/assets/images/razor-pay.png");
 
 interface PaymentSelectorProps {
   selectedMethod: PaymentMethod | null;
@@ -9,27 +11,29 @@ interface PaymentSelectorProps {
 }
 
 const PaymentMethodSelector = ({ selectedMethod, onSelectMethod }: PaymentSelectorProps) => (
-  <View className="bg-white rounded-lg p-6 shadow-sm mb-4">
-    <Text className="text-xl font-bold mb-4">Payment Method</Text>
-    <PaymentOption
-      method="RAZORPAY"
-      label="Razorpay"
-      description="Pay using UPI, Card, Net Banking & more"
-      icon="card"
-      iconColor="#6366F1"
-      bgColor="bg-indigo-100"
-      isSelected={selectedMethod === "RAZORPAY"}
-      onPress={() => onSelectMethod("RAZORPAY")}
-    />
+  <View className="bg-white rounded-2xl p-5 shadow-sm mb-4">
+    <View className="flex-row items-center gap-2 mb-5">
+      <Ionicons name="card-outline" size={22} color="#ED2353" />
+      <Text className="text-xl font-bold text-gray-900">Payment Method</Text>
+    </View>
+
     <PaymentOption
       method="PHONEPE"
       label="PhonePe"
       description="Pay using PhonePe, GPay, Paytm & more"
-      icon="phone-portrait"
-      iconColor="#16A34A"
-      bgColor="bg-green-100"
+      logo={phonePeLogo}
+      logoBg="bg-purple-50"
       isSelected={selectedMethod === "PHONEPE"}
       onPress={() => onSelectMethod("PHONEPE")}
+    />
+    <PaymentOption
+      method="RAZORPAY"
+      label="Razorpay"
+      description="Pay using UPI, Card, Net Banking & more"
+      logo={razorpayLogo}
+      logoBg="bg-indigo-50"
+      isSelected={selectedMethod === "RAZORPAY"}
+      onPress={() => onSelectMethod("RAZORPAY")}
     />
   </View>
 );
@@ -37,35 +41,43 @@ const PaymentMethodSelector = ({ selectedMethod, onSelectMethod }: PaymentSelect
 const PaymentOption = ({
   label,
   description,
-  icon,
-  iconColor,
-  bgColor,
+  logo,
+  logoBg,
   isSelected,
   onPress,
 }: {
   method: PaymentMethod;
   label: string;
   description: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
-  bgColor: string;
+  logo: any;
+  logoBg: string;
   isSelected: boolean;
   onPress: () => void;
 }) => (
   <TouchableOpacity
     onPress={onPress}
-    className={`flex-row items-center p-4 rounded-lg border-2 mb-3 ${
-      isSelected ? "border-primary bg-blue-50" : "border-gray-200 bg-white"
+    activeOpacity={0.8}
+    className={`flex-row items-center p-4 rounded-xl border-2 mb-3 ${
+      isSelected ? "border-primary/60 bg-primary/5" : "border-gray-200 bg-gray-50"
     }`}
   >
-    <View className={`w-12 h-12 ${bgColor} rounded-lg items-center justify-center mr-3`}>
-      <Ionicons name={icon} size={24} color={iconColor} />
+    <View className={`w-12 h-12 ${logoBg} rounded-xl items-center justify-center mr-3`}>
+      <Image
+        source={logo}
+        style={{ width: 36, height: 36, resizeMode: "contain" }}
+      />
     </View>
     <View className="flex-1">
-      <Text className="font-semibold text-base">{label}</Text>
-      <Text className="text-gray-600 text-sm">{description}</Text>
+      <Text className={`font-bold text-base ${isSelected ? "text-primary" : "text-gray-800"}`}>
+        {label}
+      </Text>
+      <Text className="text-gray-500 text-xs mt-0.5">{description}</Text>
     </View>
-    {isSelected && <Ionicons name="checkmark-circle" size={24} color="#3B82F6" />}
+    {isSelected && (
+      <View className="w-5 h-5 rounded-full bg-primary items-center justify-center">
+        <Ionicons name="checkmark" size={12} color="white" />
+      </View>
+    )}
   </TouchableOpacity>
 );
 

@@ -19,7 +19,7 @@ import {
 } from "@/services/queries/payment";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   AppState,
@@ -44,7 +44,7 @@ const Checkout = () => {
 
   const [state] = useState<string>(() => getInitialState(cData));
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>('PHONEPE');
   const [couponDiscount, setCouponDiscount] = useState(0);
   const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
   const [deliveryPreferences, setDeliveryPreferences] = useState<DeliveryPreferences>({
@@ -285,12 +285,15 @@ const Checkout = () => {
   // Delivery validation
   // -------------------------------------------------------------------------
   const validateDeliveryPreferences = (): boolean => {
-    const errors: DeliveryErrors = {};
     if (!deliveryPreferences.courier) {
-      errors.courier = "Please select a preferred courier";
+      Toast.show({
+        type: "error",
+        text1: "Select a courier",
+        text2: "Please choose a preferred courier to continue.",
+      });
+      return false;
     }
-    setDeliveryErrors(errors);
-    return Object.keys(errors).length === 0;
+    return true;
   };
 
   // -------------------------------------------------------------------------

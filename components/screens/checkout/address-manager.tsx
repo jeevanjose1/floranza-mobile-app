@@ -1,12 +1,12 @@
-import React, { useCallback, useEffect } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter, useFocusEffect } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useAuthenticated } from "@/hooks/useAutheticated";
 import { useListAdderss } from "@/services/queries/account";
 import { indianStates } from "@/shared/others/others";
+import { Ionicons } from "@expo/vector-icons";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useEffect } from "react";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { Address } from "./types";
 
 interface AddressManagerProps {
@@ -206,22 +206,33 @@ const AddressCard = ({
   return (
     <TouchableOpacity
       onPress={onPress}
-      activeOpacity={showEdit ? 0.7 : 1}
-      className={`p-4 rounded-lg border ${
-        isSelected ? "border-primary bg-blue-50" : "border-gray-200 bg-white"
+      activeOpacity={showEdit ? 0.8 : 1}
+      className={`p-4 rounded-xl border-2 ${
+        isSelected ? "border-primary/60 bg-primary/5" : "border-gray-200 bg-gray-50"
       }`}
     >
       <View className="flex-row items-start justify-between mb-2">
-        <Text className="font-bold text-base flex-1">{address.fullName}</Text>
-        {showEdit && (
-          <TouchableOpacity
-            onPress={() =>
-              router.push({ pathname: "/add-address", params: { isEdit: 1 } })
-            }
-          >
-            <FontAwesome name="edit" size={20} color="black" />
-          </TouchableOpacity>
-        )}
+        <Text className={`font-bold text-base flex-1 ${
+          isSelected ? "text-primary" : "text-gray-900"
+        }`}>
+          {address.fullName}
+        </Text>
+        <View className="flex-row items-center gap-2">
+          {showEdit && (
+            <TouchableOpacity
+              onPress={() =>
+                router.push({ pathname: "/add-address", params: { isEdit: 1 } })
+              }
+            >
+              <FontAwesome name="edit" size={18} color="#6B7280" />
+            </TouchableOpacity>
+          )}
+          {isSelected && (
+            <View className="w-5 h-5 rounded-full bg-primary items-center justify-center">
+              <Ionicons name="checkmark" size={12} color="white" />
+            </View>
+          )}
+        </View>
       </View>
       <Text className="text-gray-600 text-sm mb-1">{address.streetAddress}</Text>
       {address.addressLine2 ? (
@@ -232,9 +243,9 @@ const AddressCard = ({
       </Text>
       <Text className="text-gray-600 text-sm mb-1">Phone: {address.phone}</Text>
       <Text className="text-gray-600 text-sm mb-2">Email: {address.email}</Text>
-      <View className="flex-row items-center mt-2">
-        <Ionicons name="car-outline" size={16} color="#6B7280" />
-        <Text className="text-gray-600 text-sm ml-1">
+      <View className="flex-row items-center mt-1">
+        <Ionicons name="car-outline" size={15} color="#6B7280" />
+        <Text className="text-gray-500 text-xs ml-1">
           {getShippingLabel(address.shippingOption)}
         </Text>
       </View>
