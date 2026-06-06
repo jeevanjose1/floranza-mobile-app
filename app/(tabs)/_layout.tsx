@@ -2,7 +2,6 @@ import TabButton from '@/components/common/tab-button';
 import { useAuthenticated } from '@/hooks/useAutheticated';
 import useBreakPoints from '@/hooks/useBreajpoints';
 import { RelativePathString, Tabs, useRouter } from 'expo-router';
-import React from 'react';
 import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
