@@ -1,11 +1,20 @@
 import React from "react";
-import { View, Text, Image } from "react-native";
+import { View, Text, Image, TouchableOpacity } from "react-native";
 import { CartItem } from "./types";
+import { useRouter } from "expo-router";
 
-const OrderSummary = React.memo(({ items }: { items: CartItem[] }) => (
-  <View className="bg-white rounded-lg p-6 shadow-sm mb-4">
-    <Text className="text-xl font-bold mb-4">Order Summary</Text>
-    <View>
+const OrderSummary = React.memo(({ items }: { items: CartItem[] }) => {
+  const router = useRouter();
+
+  return (
+    <View className="bg-white rounded-lg p-6 shadow-sm mb-4">
+      <View className="flex-row justify-between items-center mb-4">
+        <Text className="text-xl font-bold">Order Summary</Text>
+        <TouchableOpacity onPress={() => router.push("/cart")}>
+          <Text className="text-primary font-semibold text-base">Edit</Text>
+        </TouchableOpacity>
+      </View>
+      <View>
       {items.map((item: CartItem, index: number) => (
         <View
           key={item.id || index}
@@ -38,7 +47,8 @@ const OrderSummary = React.memo(({ items }: { items: CartItem[] }) => (
         </View>
       ))}
     </View>
-  </View>
-));
+    </View>
+  );
+});
 
 export default OrderSummary;

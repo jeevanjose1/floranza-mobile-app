@@ -2,7 +2,7 @@
   "expo": {
     "name": "Floranza",
     "slug": "floranza",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "floranzaapp",
@@ -19,7 +19,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "versionCode": 3,
+      "versionCode": 4,
       "package": "com.floranza.floranzaapp",
       "intentFilters": [
         {

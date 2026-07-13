@@ -17,6 +17,7 @@ import { useCallback, useEffect } from "react";
 import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import { useInAppUpdate } from "@/hooks/useInAppUpdate";
 
 // Keep the native splash screen visible until we explicitly hide it
 SplashScreen.preventAutoHideAsync();
@@ -35,6 +36,9 @@ export default function RootLayout() {
   // Ensure fonts are loaded or proceed with error
   const isReady = fontsLoaded || fontError;
   const router = useRouter();
+
+  // Check for in-app updates (Play Store / App Store) on startup
+  useInAppUpdate();
 
   // --- Deep link handler ---
   const handleDeepLink = (url: string) => {
